@@ -22,7 +22,7 @@
 
 前往 [Releases](https://github.com/Y-ASLant/timer/releases) 页面下载适合您系统的安装包：
 - Windows: `.msi` 或 `.exe` 安装程序
-- Linux: `.deb` (Debian/Ubuntu)、`.AppImage` (通用)、`.rpm` (Fedora/RHEL)
+- Linux: `.deb` (Debian/Ubuntu)、`.rpm` (Fedora/RHEL)
 
 ### 从源码构建
 

@@ -98,7 +98,6 @@ jobs:
         run: |
           mkdir -p release
           find src-tauri/target/release/bundle/deb -name "*.deb" -exec cp {} release/ \; 2>/dev/null || true
-          find src-tauri/target/release/bundle/appimage -name "*.AppImage" -exec cp {} release/ \; 2>/dev/null || true
           find src-tauri/target/release/bundle/rpm -name "*.rpm" -exec cp {} release/ \; 2>/dev/null || true
           ls -lh release/
 
