@@ -57,6 +57,9 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
 
+      - name: Install Tauri CLI
+        run: cargo install tauri-cli --version "^2.0.0" --locked
+
       - name: Build Tauri app
         working-directory: ./src-tauri
         run: cargo tauri build --verbose
