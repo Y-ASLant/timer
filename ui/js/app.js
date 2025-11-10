@@ -42,13 +42,13 @@ window.addEventListener('DOMContentLoaded', async () => {
 
         // 绑定窗口控制按钮
         document.getElementById('titlebar-minimize')?.addEventListener('click', (e) => {
+            removeButtonFocus(e);
             appWindow.minimize();
-            e.target.blur(); // 移除焦点
         });
         document.getElementById('titlebar-maximize')?.addEventListener('click', (e) => {
+            removeButtonFocus(e);
             isFullscreen = !isFullscreen;
             appWindow.setFullscreen(isFullscreen);
-            e.target.blur(); // 移除焦点，避免焦点边框
             
             // 管理全屏状态
             if (isFullscreen) {
@@ -66,7 +66,7 @@ window.addEventListener('DOMContentLoaded', async () => {
             }
         });
         document.getElementById('titlebar-close')?.addEventListener('click', (e) => {
-            e.target.blur(); // 移除焦点
+            removeButtonFocus(e);
             appWindow.close();
         });
 
@@ -569,73 +569,54 @@ function initEventListeners() {
     // 标题点击跳转 GitHub
     document.getElementById('app-title')?.addEventListener('click', async (e) => {
         e.stopPropagation(); // 阻止拖拽事件
-        try {
-            if (window.__TAURI__?.shell) {
-                await window.__TAURI__.shell.open('https://github.com/Y-ASLant');
-            } else {
-                window.open('https://github.com/Y-ASLant', '_blank');
-            }
-        } catch (error) {
-            console.error('打开链接失败:', error);
-        }
+        await openExternalUrl('https://github.com/Y-ASLant');
     });
     
     // Star 按钮点击
     document.getElementById('star-button')?.addEventListener('click', async (e) => {
         e.stopPropagation(); // 阻止拖拽事件
-        try {
-            if (window.__TAURI__?.shell) {
-                await window.__TAURI__.shell.open('https://github.com/Y-ASLant/timer');
-            } else {
-                window.open('https://github.com/Y-ASLant/timer', '_blank');
-            }
-        } catch (error) {
-            console.error('打开链接失败:', error);
-        }
+        await openExternalUrl('https://github.com/Y-ASLant/timer');
     });
     
     // 检查更新按钮
     document.getElementById('check-update-btn')?.addEventListener('click', (e) => {
-        e.target.blur(); // 移除焦点
+        removeButtonFocus(e);
         checkForUpdates();
     });
     
     // 全局设置按钮
     document.getElementById('global-settings-btn')?.addEventListener('click', (e) => {
-        e.target.blur(); // 移除焦点
+        removeButtonFocus(e);
         openGlobalSettings();
     });
     
     // 布局按钮切换
     document.querySelectorAll('.layout-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            e.target.blur(); // 移除焦点
-            document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+            removeButtonFocus(e);
+            toggleButtonGroup(btn, '.layout-btn');
         });
     });
     
     // 主题切换按钮
     document.getElementById('theme-toggle')?.addEventListener('click', (e) => {
-        e.target.blur(); // 移除焦点
+        removeButtonFocus(e);
         toggleTheme();
     });
     
     // 模式按钮切换
     document.querySelectorAll('.mode-btn').forEach(btn => {
         btn.addEventListener('click', function(e) {
-            e.target.blur(); // 移除焦点
-            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
+            removeButtonFocus(e);
+            toggleButtonGroup(this, '.mode-btn');
         });
     });
     
     // 颜色选择
     document.querySelectorAll('.color-option').forEach(opt => {
         opt.addEventListener('click', function(e) {
-            e.target.blur(); // 移除焦点
-            document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
-            this.classList.add('selected');
+            removeButtonFocus(e);
+            toggleButtonGroup(this, '.color-option', 'selected');
         });
     });
     
@@ -918,6 +899,30 @@ function handleKeyPress(e) {
     }
 }
 
+// 通用工具函数：打开外部链接
+async function openExternalUrl(url) {
+    try {
+        if (window.__TAURI__?.shell) {
+            await window.__TAURI__.shell.open(url);
+        } else {
+            window.open(url, '_blank');
+        }
+    } catch (error) {
+        console.error('打开链接失败:', error);
+    }
+}
+
+// 通用工具函数：移除按钮焦点
+function removeButtonFocus(e) {
+    e.target.blur();
+}
+
+// 通用工具函数：切换按钮组的激活状态
+function toggleButtonGroup(button, selector, activeClass = 'active') {
+    document.querySelectorAll(selector).forEach(b => b.classList.remove(activeClass));
+    button.classList.add(activeClass);
+}
+
 // 格式化时间
 function formatTime(totalSeconds, precision = 0) {
     const hours = Math.floor(totalSeconds / 3600);
@@ -991,11 +996,12 @@ async function checkForUpdates() {
         document.getElementById('update-message').innerHTML = errorMsg;
         document.getElementById('update-message').className = 'text-sm text-gray-700 p-3 rounded-lg bg-red-50 border border-red-200';
         
-        // 如果是403错误，仍然尝试下载（可能可以直接下载文件）
+        // 如果是403错误，提供手动下载选项
         if (errorMsg.includes('403') || errorMsg.includes('访问受限')) {
-            downloadBtn.textContent = '尝试下载';
+            downloadBtn.textContent = '手动下载';
             downloadBtn.classList.remove('hidden');
-            // 保持原有的下载URL，不改为releases页面
+            // 设置为GitHub Releases页面
+            latestReleaseUrl = 'https://github.com/Y-ASLant/timer/releases';
         }
     }
 }
@@ -1008,6 +1014,12 @@ function closeUpdateDialog() {
 // 下载更新
 async function downloadUpdate() {
     if (!latestReleaseUrl) {
+        return;
+    }
+    
+    // 如果是GitHub Releases页面，直接打开浏览器
+    if (latestReleaseUrl === 'https://github.com/Y-ASLant/timer/releases') {
+        await openExternalUrl(latestReleaseUrl);
         return;
     }
     
@@ -1039,11 +1051,8 @@ async function downloadUpdate() {
         // 更新按钮功能：点击打开文件夹
         downloadBtn.onclick = async function() {
             try {
-                if (window.__TAURI__?.shell) {
-                    // 提取文件夹路径
-                    const folderPath = filePath.substring(0, filePath.lastIndexOf('\\'));
-                    await window.__TAURI__.shell.open(folderPath);
-                }
+                const folderPath = filePath.substring(0, filePath.lastIndexOf('\\'));
+                await openExternalUrl(folderPath);
             } catch (err) {
                 console.error('打开文件夹失败:', err);
                 alert('无法打开文件夹，文件路径：\n' + filePath);

@@ -187,8 +187,8 @@ async fn download_update_file(
 
         // 从URL中提取文件名
         let file_name = download_url
-            .split('/')
-            .last()
+            .rsplit('/')
+            .next()
             .ok_or_else(|| "无法解析文件名".to_string())?;
 
         let file_path = update_dir.join(file_name);
@@ -232,7 +232,7 @@ async fn download_update_file(
 
 // 启动安装程序
 #[cfg(target_os = "windows")]
-fn launch_installer(file_path: &std::path::PathBuf) -> Result<(), String> {
+fn launch_installer(file_path: &std::path::Path) -> Result<(), String> {
     std::process::Command::new("cmd")
         .args(["/c", "start", "", &file_path.to_string_lossy()])
         .spawn()
