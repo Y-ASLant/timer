@@ -2,11 +2,11 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use keepawake::{Builder, KeepAwake};
-use std::sync::Mutex;
-use serde::{Deserialize, Serialize};
 use reqwest::blocking::Client;
 use semver::Version;
+use serde::{Deserialize, Serialize};
 use std::fs::File;
+use std::sync::Mutex;
 use tauri::Manager;
 
 // 常量定义
@@ -38,7 +38,7 @@ fn prevent_sleep(state: tauri::State<AppState>) -> Result<(), String> {
         .app_name("计时器")
         .create()
         .map_err(|e| format!("无法阻止休眠: {:?}", e))?;
-    
+
     *keep_awake = Some(ka);
     Ok(())
 }
@@ -89,16 +89,16 @@ fn create_http_client(timeout_secs: u64) -> Result<Client, String> {
 fn check_github_update(github_token: String) -> Result<UpdateCheckResult, String> {
     let client = create_http_client(REQUEST_TIMEOUT_SECS)?;
     let mut request = client.get(GITHUB_REPO_URL);
-    
+
     if !github_token.is_empty() {
         request = request.header("Authorization", format!("token {}", github_token));
     }
-    
+
     // 请求最新版本信息
     let response = request
         .send()
         .map_err(|e| format!("网络请求失败，请检查网络连接: {}", e))?;
-    
+
     // 详细处理不同的HTTP状态码
     let status = response.status();
     if !status.is_success() {
@@ -107,29 +107,31 @@ fn check_github_update(github_token: String) -> Result<UpdateCheckResult, String
                 if github_token.is_empty() {
                     Err("GitHub API访问受限<br><br>解决方案：<br>1. 在全局设置中配置GitHub Token（推荐）<br>2. 关闭VPN后重试<br>3. 访问 <a href='https://github.com/Y-ASLant/timer/releases' target='_blank'>GitHub Releases</a>".to_string())
                 } else {
-                    Err("GitHub Token可能无效或已过期<br><br>请在全局设置中重新配置Token".to_string())
+                    Err(
+                        "GitHub Token可能无效或已过期<br><br>请在全局设置中重新配置Token"
+                            .to_string(),
+                    )
                 }
-            },
+            }
             404 => Err("未找到版本信息，仓库可能不存在或尚无发布版本".to_string()),
             _ => Err(format!("GitHub API返回错误 ({}): 请稍后再试", status)),
         };
     }
-    
+
     let release: GitHubRelease = response
         .json()
         .map_err(|e| format!("解析版本信息失败: {}", e))?;
-    
+
     let latest_version_str = release.tag_name.trim_start_matches('v');
     let current = Version::parse(env!("CARGO_PKG_VERSION"))
         .map_err(|e| format!("解析当前版本失败: {}", e))?;
     let latest = Version::parse(latest_version_str)
         .map_err(|e| format!("解析最新版本号失败: {}，可能版本格式不标准", e))?;
-    
+
     let has_update = latest > current;
-    
-    let download_url = find_installer_url(&release.assets)
-        .unwrap_or(release.html_url);
-    
+
+    let download_url = find_installer_url(&release.assets).unwrap_or(release.html_url);
+
     Ok(UpdateCheckResult {
         has_update,
         current_version: env!("CARGO_PKG_VERSION").to_string(),
@@ -141,18 +143,26 @@ fn check_github_update(github_token: String) -> Result<UpdateCheckResult, String
 
 // 查找安装包URL（优先级：setup.exe > .msi）
 fn find_installer_url(assets: &[ReleaseAsset]) -> Option<String> {
-    assets.iter()
+    assets
+        .iter()
         .find(|asset| {
             let name = asset.name.to_lowercase();
             name.contains("setup") && name.ends_with(".exe")
         })
-        .or_else(|| assets.iter().find(|asset| asset.name.to_lowercase().ends_with(".msi")))
+        .or_else(|| {
+            assets
+                .iter()
+                .find(|asset| asset.name.to_lowercase().ends_with(".msi"))
+        })
         .map(|asset| asset.browser_download_url.clone())
 }
 
 // 下载更新文件（异步）
 #[tauri::command]
-async fn download_update_file(download_url: String, app_handle: tauri::AppHandle) -> Result<String, String> {
+async fn download_update_file(
+    download_url: String,
+    app_handle: tauri::AppHandle,
+) -> Result<String, String> {
     // 在后台线程中执行下载，避免阻塞UI
     let result = tauri::async_runtime::spawn_blocking(move || {
         // 获取应用数据目录
@@ -160,12 +170,11 @@ async fn download_update_file(download_url: String, app_handle: tauri::AppHandle
             .path()
             .app_data_dir()
             .map_err(|e| format!("无法获取应用数据目录: {}", e))?;
-        
+
         // 创建 update 子目录
         let update_dir = app_data_dir.join("update");
-        std::fs::create_dir_all(&update_dir)
-            .map_err(|e| format!("创建更新目录失败: {}", e))?;
-        
+        std::fs::create_dir_all(&update_dir).map_err(|e| format!("创建更新目录失败: {}", e))?;
+
         // 清理旧的更新文件
         if let Ok(entries) = std::fs::read_dir(&update_dir) {
             for entry in entries.flatten() {
@@ -175,50 +184,49 @@ async fn download_update_file(download_url: String, app_handle: tauri::AppHandle
                 }
             }
         }
-        
+
         // 从URL中提取文件名
         let file_name = download_url
             .split('/')
             .last()
             .ok_or_else(|| "无法解析文件名".to_string())?;
-        
+
         let file_path = update_dir.join(file_name);
-        
+
         let client = create_http_client(DOWNLOAD_TIMEOUT_SECS)?;
-        
+
         // 下载文件
-        let mut response = client.get(&download_url)
+        let mut response = client
+            .get(&download_url)
             .send()
             .map_err(|e| format!("下载请求失败: {}", e))?;
-        
+
         if !response.status().is_success() {
             return Err(format!("下载失败，HTTP状态码: {}", response.status()));
         }
-        
+
         // 创建文件
-        let mut file = File::create(&file_path)
-            .map_err(|e| format!("创建文件失败: {}", e))?;
-        
+        let mut file = File::create(&file_path).map_err(|e| format!("创建文件失败: {}", e))?;
+
         // 写入文件
-        std::io::copy(&mut response, &mut file)
-            .map_err(|e| format!("写入文件失败: {}", e))?;
-        
+        std::io::copy(&mut response, &mut file).map_err(|e| format!("写入文件失败: {}", e))?;
+
         // 刷新文件确保写入完成
         file.sync_all()
             .map_err(|e| format!("文件同步失败: {}", e))?;
-        
+
         drop(file);
         let file_path_str = file_path.to_string_lossy().to_string();
         std::thread::sleep(std::time::Duration::from_millis(FILE_RELEASE_DELAY_MS));
-        
+
         #[cfg(target_os = "windows")]
         launch_installer(&file_path)?;
-        
+
         Ok::<String, String>(file_path_str)
     })
     .await
     .map_err(|e| format!("下载任务执行失败: {}", e))??;
-    
+
     Ok(result)
 }
 
@@ -238,7 +246,12 @@ fn main() {
         .manage(AppState {
             keep_awake: Mutex::new(None),
         })
-        .invoke_handler(tauri::generate_handler![prevent_sleep, allow_sleep, check_github_update, download_update_file])
+        .invoke_handler(tauri::generate_handler![
+            prevent_sleep,
+            allow_sleep,
+            check_github_update,
+            download_update_file
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
