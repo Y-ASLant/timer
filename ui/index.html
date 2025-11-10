@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计时器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="h-screen overflow-hidden" oncontextmenu="return false;">
+    <!-- 标题栏 - 现代简约 -->
+    <div class="h-10 bg-white border-b border-gray-200 flex items-center justify-between px-4">
+        <div data-tauri-drag-region class="flex items-center space-x-3 flex-1 h-full">
+            <div class="w-2 h-2 rounded-full bg-blue-500 breathing-light"></div>
+            <span class="text-gray-700 text-xs font-medium select-none">计时器</span>
+        </div>
+        <div class="flex items-center space-x-1">
+            <button id="global-settings-btn" class="w-9 h-9 hover:bg-gray-100 flex items-center justify-center transition-all duration-200 rounded-lg" title="全局设置">
+                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+            <button id="theme-toggle" class="w-9 h-9 hover:bg-gray-100 flex items-center justify-center transition-all duration-200 rounded-lg mr-2" title="主题切换">
+                <svg id="theme-icon" class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                </svg>
+            </button>
+            <button id="titlebar-minimize" class="w-9 h-9 hover:bg-gray-100 flex items-center justify-center transition-all duration-200 rounded-lg">
+                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                </svg>
+            </button>
+            <button id="titlebar-maximize" class="w-9 h-9 hover:bg-gray-100 flex items-center justify-center transition-all duration-200 rounded-lg">
+                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path>
+                </svg>
+            </button>
+            <button id="titlebar-close" class="w-9 h-9 hover:bg-red-50 flex items-center justify-center transition-all duration-200 group rounded-lg">
+                <svg class="w-4 h-4 text-gray-500 group-hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- 主内容区 - 网格布局 -->
+    <div class="h-[calc(100vh-2.5rem)] grid-container" id="main-grid">
+        <!-- 默认4个卡片区域 -->
+    </div>
+
+    <!-- 全局设置弹窗 -->
+    <div class="config-overlay" id="global-settings-overlay">
+        <div class="config-dialog" style="width: 500px;">
+            <h2 class="text-lg font-semibold mb-3">全局设置</h2>
+            
+            <div class="space-y-3">
+                <!-- 布局设置 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">布局方式</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button class="layout-btn active" data-layout="2x2">
+                            <div class="flex flex-col items-center gap-1">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <rect x="3" y="3" width="8" height="8" stroke-width="2" rx="1"></rect>
+                                    <rect x="13" y="3" width="8" height="8" stroke-width="2" rx="1"></rect>
+                                    <rect x="3" y="13" width="8" height="8" stroke-width="2" rx="1"></rect>
+                                    <rect x="13" y="13" width="8" height="8" stroke-width="2" rx="1"></rect>
+                                </svg>
+                                <span class="text-xs">四宫格</span>
+                            </div>
+                        </button>
+                        <button class="layout-btn" data-layout="1x2">
+                            <div class="flex flex-col items-center gap-1">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <rect x="3" y="3" width="8" height="18" stroke-width="2" rx="1"></rect>
+                                    <rect x="13" y="3" width="8" height="18" stroke-width="2" rx="1"></rect>
+                                </svg>
+                                <span class="text-xs">左右分屏</span>
+                            </div>
+                        </button>
+                        <button class="layout-btn" data-layout="2x1">
+                            <div class="flex flex-col items-center gap-1">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <rect x="3" y="3" width="18" height="8" stroke-width="2" rx="1"></rect>
+                                    <rect x="3" y="13" width="18" height="8" stroke-width="2" rx="1"></rect>
+                                </svg>
+                                <span class="text-xs">上下分屏</span>
+                            </div>
+                        </button>
+                        <button class="layout-btn" data-layout="1x1">
+                            <div class="flex flex-col items-center gap-1">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <rect x="3" y="3" width="18" height="18" stroke-width="2" rx="1"></rect>
+                                </svg>
+                                <span class="text-xs">全屏单个</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 使用说明 -->
+                <div class="pt-2 border-t border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2">使用说明</h3>
+                    <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-600">
+                        <div>• 空格 - 启动/暂停所有</div>
+                        <div>• F11 - 全屏切换</div>
+                        <div>• F12 - 重置所有</div>
+                        <div>• ESC - 退出全屏</div>
+                        <div>• 1-4 - 控制单个区域</div>
+                        <div>• 点击左上角编号 - 重置该区域</div>
+                    </div>
+                </div>
+
+                <!-- 按钮组 -->
+                <div class="flex gap-2 pt-3">
+                    <button onclick="closeGlobalSettings()" class="cancel-btn flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">
+                        取消
+                    </button>
+                    <button onclick="saveGlobalSettings()" class="confirm-btn flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        确定
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 配置弹窗 -->
+    <div class="config-overlay" id="config-overlay">
+        <div class="config-dialog">
+            <h2 class="text-lg font-semibold mb-3">区域配置</h2>
+            
+            <div class="space-y-3">
+                <!-- 工作模式 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">工作模式</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button class="mode-btn active" data-mode="countdown">倒计时</button>
+                        <button class="mode-btn" data-mode="clock">时钟</button>
+                        <button class="mode-btn" data-mode="stopwatch">秒表</button>
+                        <button class="mode-btn" data-mode="counter">计数器</button>
+                    </div>
+                </div>
+
+                <!-- 显示颜色 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">显示颜色</label>
+                    <div class="flex py-2 px-2">
+                        <div class="color-option selected" style="background-color: #FFFF00" data-color="#FFFF00" title="黄色"></div>
+                        <div class="color-option" style="background-color: #FF0000" data-color="#FF0000" title="红色"></div>
+                        <div class="color-option" style="background-color: #00FF00" data-color="#00FF00" title="绿色"></div>
+                        <div class="color-option" style="background-color: #0000FF" data-color="#0000FF" title="蓝色"></div>
+                        <div class="color-option" style="background-color: #FF00FF" data-color="#FF00FF" title="紫红"></div>
+                        <div class="color-option" style="background-color: #00FFFF" data-color="#00FFFF" title="青色"></div>
+                        <div class="color-option" style="background-color: #FFFFFF" data-color="#FFFFFF" title="白色"></div>
+                        <div class="color-option" style="background-color: #FFA500" data-color="#FFA500" title="橙色"></div>
+                        <div class="color-option" style="background-color: #FF1493" data-color="#FF1493" title="粉红"></div>
+                        <div class="color-option" style="background-color: #00FA9A" data-color="#00FA9A" title="春绿"></div>
+                        <div class="color-option" style="background-color: #FFD700" data-color="#FFD700" title="金色"></div>
+                        <div class="color-option" style="background-color: #FF69B4" data-color="#FF69B4" title="热粉"></div>
+                    </div>
+                </div>
+
+                <!-- 字体大小 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">字体大小</label>
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="font-size" min="1" max="100" step="0.5" value="6.0" 
+                            class="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:border-blue-500 text-center"
+                            inputmode="decimal">
+                        <span class="text-sm text-gray-500">rem</span>
+                    </div>
+                </div>
+
+                <!-- 倒计时初值 -->
+                <div id="countdown-settings">
+                    <label class="block text-sm font-medium text-gray-700 mb-1.5">倒计时初值</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <div>
+                            <label class="text-xs text-gray-500 mb-1 block">小时</label>
+                            <input type="number" id="config-hours" value="2" min="0" max="23" 
+                                class="w-full px-3 py-2 border rounded-lg focus:outline-none text-center">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 mb-1 block">分</label>
+                            <input type="number" id="config-minutes" value="0" min="0" max="59" 
+                                class="w-full px-3 py-2 border rounded-lg focus:outline-none text-center">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 mb-1 block">秒</label>
+                            <input type="number" id="config-seconds" value="0" min="0" max="59" 
+                                class="w-full px-3 py-2 border rounded-lg focus:outline-none text-center">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 按钮组 -->
+                <div class="flex gap-2 pt-3">
+                    <button onclick="closeConfig()" class="cancel-btn flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50">
+                        取消
+                    </button>
+                    <button onclick="saveConfig()" class="confirm-btn flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                        确定
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

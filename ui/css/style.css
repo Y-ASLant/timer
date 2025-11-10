@@ -1,0 +1,828 @@
+/* HarmonyOS Sans SC 字体 */
+@font-face {
+    font-family: 'HarmonyOS Sans SC';
+    font-weight: 400;
+    font-style: normal;
+    src: url('../font/HarmonyOS_Sans_SC_Regular.woff2') format('woff2');
+}
+
+/* 液晶数码字体 */
+@font-face {
+    font-family: 'G7 Segment';
+    src: url('../font/G7_Segment_7a.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* 全局使用 HarmonyOS Sans SC */
+* {
+    font-family: 'HarmonyOS Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #f8f9fa;
+    transition: background 0.3s ease; /* 添加背景过渡动画 */
+}
+
+/* 全屏时自动隐藏鼠标 */
+body.hide-cursor {
+    cursor: none !important;
+}
+
+body.hide-cursor * {
+    cursor: none !important;
+}
+
+/* 鼠标隐藏时禁用悬停效果 */
+body.hide-cursor .timer-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+    transform: none !important;
+}
+
+body.hide-cursor.dark-mode .timer-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+    transform: none !important;
+}
+
+/* 禁止文字选中 */
+* {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* 移除所有按钮和可点击元素的焦点边框 */
+button:focus,
+button:focus-visible,
+div[onclick]:focus,
+div[onclick]:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+input, textarea {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
+
+/* 美化滚动条 - 现代简约风格 */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #d0d7de;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #b8c0ca;
+}
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #d0d7de transparent;
+}
+
+/* 液晶数码管样式 */
+.digit-display {
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'G7 Segment', monospace;
+    font-weight: normal;
+    letter-spacing: 0.05em;
+    padding: 2rem;
+}
+
+.timer-display {
+    font-family: 'G7 Segment', monospace !important;
+}
+
+.digit {
+    display: inline-block;
+    min-width: 0.6em;
+    text-align: center;
+}
+
+.colon {
+    display: inline-block;
+    width: 0.3em;
+    text-align: center;
+}
+
+/* 按钮悬停效果 */
+.btn-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+.btn-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+.btn-hover:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 控制面板样式 - 现代简约 */
+.control-panel {
+    background: white;
+    border-radius: 0.3rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 1.25rem;
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.control-panel:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-color: #d1d5db;
+}
+
+/* 配置面板内的子面板 */
+.config-content .control-panel {
+    height: auto;
+}
+
+/* 布局切换按钮 */
+.layout-btn {
+    background: white;
+    color: #6b7280;
+    border: 1.5px solid #e5e7eb;
+    font-weight: 500;
+}
+
+.layout-btn:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.layout-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+/* 横向布局 */
+.layout-horizontal {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+/* 纵向布局 */
+.layout-vertical {
+    flex-direction: column;
+    flex-wrap: nowrap;
+}
+
+.layout-vertical .timer-item {
+    margin-bottom: 1rem;
+}
+
+.layout-vertical .timer-item:last-child {
+    margin-bottom: 0;
+}
+
+/* 配置按钮 */
+.config-btn {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.3rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.config-btn:hover {
+    background: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.config-btn svg {
+    transition: transform 0.3s ease;
+}
+
+.config-btn.active svg {
+    transform: rotate(180deg);
+}
+
+/* 配置面板展开动画 */
+.config-content {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s ease;
+    overflow: hidden;
+}
+
+.config-content.show {
+    grid-template-rows: 1fr;
+}
+
+.config-content-inner {
+    min-height: 0;
+}
+
+/* 控制面板标题 */
+.control-panel h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 1rem;
+    letter-spacing: 0.025em;
+}
+
+/* 单选按钮样式 */
+.radio-label {
+    cursor: pointer;
+    transition: all 0.2s;
+    padding: 0.5rem;
+    border-radius: 0.3rem;
+    color: #6b7280;
+}
+
+.radio-label:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+input[type="radio"] {
+    accent-color: #3b82f6;
+}
+
+input[type="radio"]:checked + span {
+    color: #3b82f6;
+    font-weight: 500;
+}
+
+/* 输入框样式 */
+input[type="number"],
+input[type="text"] {
+    border: 1.5px solid #e5e7eb;
+    transition: all 0.2s, background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+input[type="number"]:focus,
+input[type="text"]:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* 全屏模式样式 */
+.fullscreen-mode .control-panel-container {
+    display: none;
+}
+
+.fullscreen-mode > div:first-child {
+    padding: 0;
+}
+
+.fullscreen-mode .digit-display {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+}
+
+/* 颜色选项 */
+.color-option {
+    min-width: 44px;
+    width: 44px;
+    height: 44px;
+    border-radius: 0.3rem;
+    cursor: pointer;
+    border: 2px solid #e5e7eb;
+    transition: all 0.2s;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.color-option.selected {
+    border-color: #3b82f6;
+    border-width: 3px;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3), 0 4px 12px rgba(59, 130, 246, 0.4);
+    transform: scale(1.05);
+}
+
+.color-option.selected::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid #3b82f6;
+}
+
+.color-option.selected::after {
+    content: '✓';
+    position: absolute;
+    bottom: -3px;
+    right: -3px;
+    width: 18px;
+    height: 18px;
+    background: #3b82f6;
+    color: white;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+    line-height: 1;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    border: 2px solid white;
+}
+
+/* 网格容器 */
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 1rem;
+    padding: 1rem;
+    height: 100%;
+    background: #f8f9fa;
+    transition: background 0.3s ease; /* 添加背景过渡动画 */
+}
+
+/* 卡片样式 */
+.timer-card {
+    background: white;
+    border: 1px solid transparent; /* 透明边框，保持与深色模式盒模型一致 */
+    border-radius: 0.3rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease; /* 只过渡必要属性 */
+    position: relative;
+    cursor: pointer;
+}
+
+.timer-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+}
+
+/* 卡片区域标签 */
+.card-label {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #6b7280;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.3rem;
+    border: 1px solid transparent;
+    z-index: 10;
+    pointer-events: auto; /* 允许点击 */
+    cursor: pointer; /* 鼠标指针 */
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+}
+
+.card-label:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* 标签状态颜色 */
+.card-label.status-idle {
+    background: rgba(156, 163, 175, 0.9); /* 灰色 - 未启动/停止 */
+    color: white;
+}
+
+.card-label.status-running {
+    background: rgba(34, 197, 94, 0.9); /* 绿色 - 运行中 */
+    color: white;
+}
+
+.card-label.status-paused {
+    background: rgba(251, 146, 60, 0.9); /* 橙色 - 暂停 */
+    color: white;
+}
+
+/* 最后5秒警告闪烁动画 */
+@keyframes flash-warning {
+    0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 30px rgba(239, 68, 68, 0.8);
+    }
+    50% {
+        opacity: 0.6;
+        box-shadow: 0 0 60px rgba(239, 68, 68, 1);
+    }
+}
+
+.timer-card.warning {
+    animation: flash-warning 0.5s ease-in-out infinite;
+    border: 3px solid #ef4444;
+}
+
+.card-label.warning {
+    background: rgba(239, 68, 68, 0.95) !important; /* 红色闪烁 */
+    animation: flash-warning 0.5s ease-in-out infinite;
+}
+
+/* 卡片内容 */
+.card-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background: #000;
+}
+
+.card-display {
+    font-family: 'G7 Segment', monospace !important;
+    color: var(--card-color, #FFFF00); /* 使用 CSS 变量，默认黄色 */
+    font-size: var(--card-font-size, 6rem); /* 使用 CSS 变量，默认 6rem */
+    text-align: center;
+    letter-spacing: 0.05em;
+}
+
+/* 合并卡片 */
+.card-span-h {
+    grid-column: span 2;
+}
+
+.card-span-v {
+    grid-row: span 2;
+}
+
+.card-span-full {
+    grid-column: span 2;
+    grid-row: span 2;
+}
+
+/* 配置面板浮窗 */
+.config-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.config-overlay.show {
+    display: flex;
+}
+
+.config-dialog {
+    background: white;
+    border-radius: 0.3rem;
+    padding: 1.5rem;
+    width: 580px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease; /* 添加过渡动画 */
+}
+
+/* 模式按钮 */
+.mode-btn {
+    padding: 0.625rem;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 0.3rem;
+    background: white;
+    color: #6b7280;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s, background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.mode-btn:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.mode-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+/* 布局按钮 */
+.layout-btn {
+    padding: 1rem;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 0.3rem;
+    background: white;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s, background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.layout-btn:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.layout-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+/* 深色模式 */
+body.dark-mode {
+    background: #0a0a0a;
+}
+
+body.dark-mode .grid-container {
+    background: #0a0a0a;
+}
+
+body.dark-mode .timer-card {
+    background: #1a1a1a;
+    border: 1px solid #2d2d2d;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+body.dark-mode .timer-card:hover {
+    border-color: #404040;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+body.dark-mode .card-label {
+    color: #d1d5db;
+    background: rgba(31, 31, 31, 0.9);
+    border: 1px solid #404040;
+}
+
+body.dark-mode .card-label:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* 深色模式下的标签状态颜色 */
+body.dark-mode .card-label.status-idle {
+    background: rgba(107, 114, 128, 0.9); /* 深灰色 - 未启动/停止 */
+    color: white;
+    border-color: #6b7280;
+}
+
+body.dark-mode .card-label.status-running {
+    background: rgba(34, 197, 94, 0.9); /* 绿色 - 运行中 */
+    color: white;
+    border-color: #22c55e;
+}
+
+body.dark-mode .card-label.status-paused {
+    background: rgba(251, 146, 60, 0.9); /* 橙色 - 暂停 */
+    color: white;
+    border-color: #fb923c;
+}
+
+/* 深色模式下的警告闪烁 */
+body.dark-mode .timer-card.warning {
+    border-color: #ef4444;
+    box-shadow: 0 0 40px rgba(239, 68, 68, 0.8);
+}
+
+body.dark-mode .card-label.warning {
+    background: rgba(239, 68, 68, 0.95) !important;
+    border-color: #ef4444;
+}
+
+body.dark-mode .color-option {
+    border-color: #404040;
+}
+
+body.dark-mode .color-option.selected {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.4), 0 4px 12px rgba(59, 130, 246, 0.5);
+}
+
+body.dark-mode .color-option.selected::after {
+    border-color: #1f1f1f;
+}
+
+body.dark-mode .config-dialog {
+    background: #1f1f1f;
+    color: #e5e7eb;
+    border: 1px solid #404040;
+}
+
+body.dark-mode h2 {
+    color: #f3f4f6;
+}
+
+body.dark-mode .mode-btn {
+    background: #1a1a1a;
+    color: #9ca3af;
+    border-color: #404040;
+}
+
+body.dark-mode .mode-btn:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+body.dark-mode .mode-btn.active {
+    background: #3b82f6;
+    color: white;
+}
+
+body.dark-mode .layout-btn {
+    background: #1a1a1a;
+    color: #9ca3af;
+    border-color: #404040;
+}
+
+body.dark-mode .layout-btn:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+body.dark-mode .layout-btn.active {
+    background: #3b82f6;
+    color: white;
+}
+
+body.dark-mode input {
+    background: #0f0f0f;
+    color: #e5e7eb;
+    border-color: #404040;
+}
+
+body.dark-mode details summary {
+    color: #e5e7eb;
+}
+
+body.dark-mode details p,
+body.dark-mode details ul,
+body.dark-mode details li {
+    color: #9ca3af;
+}
+
+body.dark-mode input[type="number"]::-webkit-inner-spin-button,
+body.dark-mode input[type="number"]::-webkit-outer-spin-button {
+    filter: invert(0.8) hue-rotate(180deg);
+}
+
+body.dark-mode input:hover {
+    border-color: #525252;
+}
+
+body.dark-mode input:focus {
+    border-color: #3b82f6;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+body.dark-mode label {
+    color: #d1d5db;
+}
+
+body.dark-mode .text-gray-500 {
+    color: #9ca3af !important;
+}
+
+body.dark-mode .text-gray-700 {
+    color: #d1d5db !important;
+}
+
+body.dark-mode .cancel-btn {
+    background: #2d2d2d;
+    border-color: #404040;
+    color: #d1d5db;
+}
+
+body.dark-mode .cancel-btn:hover {
+    background: #404040;
+    border-color: #525252;
+}
+
+body.dark-mode .confirm-btn {
+    background: #3b82f6;
+    color: white;
+}
+
+body.dark-mode .confirm-btn:hover {
+    background: #2563eb;
+}
+
+body.dark-mode .config-overlay {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+body.dark-mode input[type="range"] {
+    accent-color: #3b82f6;
+}
+
+body.dark-mode #font-size-value {
+    color: #e5e7eb;
+}
+
+/* 标题栏过渡动画 */
+.h-10.bg-white {
+    transition: background 0.3s ease, border-color 0.3s ease !important;
+}
+
+/* 标题栏深色模式 */
+body.dark-mode .h-10.bg-white {
+    background: #0f0f0f !important;
+    border-bottom-color: #2d2d2d;
+}
+
+body.dark-mode .breathing-light {
+    background: #3b82f6;
+}
+
+body.dark-mode .text-gray-700 {
+    color: #e5e7eb !important;
+}
+
+body.dark-mode #titlebar-minimize:hover,
+body.dark-mode #titlebar-maximize:hover,
+body.dark-mode #theme-toggle:hover,
+body.dark-mode #global-settings-btn:hover {
+    background: #2d2d2d !important;
+}
+
+body.dark-mode #titlebar-minimize svg,
+body.dark-mode #titlebar-maximize svg,
+body.dark-mode #theme-toggle svg,
+body.dark-mode #global-settings-btn svg {
+    color: #9ca3af !important;
+}
+
+body.dark-mode #titlebar-close:hover {
+    background: #991b1b !important;
+}
+
+body.dark-mode #titlebar-close:hover svg {
+    color: #fecaca !important;
+}
+
+/* 控制面板网格 */
+.controls-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+@media (max-width: 1200px) {
+    .controls-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .controls-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* 呼吸灯动画 - 简约版 */
+@keyframes breathing {
+    0%, 100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+.breathing-light {
+    animation: breathing 2s ease-in-out infinite;
+}
