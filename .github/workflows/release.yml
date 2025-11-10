@@ -94,11 +94,11 @@ jobs:
           New-Item -Path "release" -ItemType Directory -Force
           # 复制并重命名文件
           Get-ChildItem -Path "src-tauri/target/release/bundle/msi/*.msi" -ErrorAction SilentlyContinue | ForEach-Object {
-            $newName = $_.Name -replace 'countdown-timer', '计时器'
+            $newName = $_.Name -replace 'countdown-timer', 'CountdownTimer'
             Copy-Item $_.FullName -Destination "release/$newName"
           }
           Get-ChildItem -Path "src-tauri/target/release/bundle/nsis/*.exe" -ErrorAction SilentlyContinue | ForEach-Object {
-            $newName = $_.Name -replace 'countdown-timer', '计时器'
+            $newName = $_.Name -replace 'countdown-timer', 'CountdownTimer'
             Copy-Item $_.FullName -Destination "release/$newName"
           }
           Get-ChildItem -Path "release/" -Recurse | ForEach-Object { Write-Host $_.Name }
@@ -109,12 +109,12 @@ jobs:
           mkdir -p release
           # 复制并重命名 DEB 文件
           find src-tauri/target/release/bundle/deb -name "*.deb" 2>/dev/null | while read file; do
-            newname=$(basename "$file" | sed 's/countdown-timer/计时器/g')
+            newname=$(basename "$file" | sed 's/countdown-timer/CountdownTimer/g')
             cp "$file" "release/$newname"
           done
           # 复制并重命名 RPM 文件
           find src-tauri/target/release/bundle/rpm -name "*.rpm" 2>/dev/null | while read file; do
-            newname=$(basename "$file" | sed 's/countdown-timer/计时器/g')
+            newname=$(basename "$file" | sed 's/countdown-timer/CountdownTimer/g')
             cp "$file" "release/$newname"
           done
           ls -lh release/
