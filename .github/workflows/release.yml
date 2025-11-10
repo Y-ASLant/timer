@@ -50,7 +50,15 @@ jobs:
             file \
             libssl-dev \
             libayatana-appindicator3-dev \
-            librsvg2-dev
+            librsvg2-dev \
+            imagemagick
+
+      - name: Generate PNG icons from ICO (Linux)
+        if: matrix.platform.os == 'ubuntu-22.04'
+        run: |
+          convert icons/icon.ico[0] -resize 32x32 icons/32x32.png
+          convert icons/icon.ico[0] -resize 128x128 icons/128x128.png
+          convert icons/icon.ico[0] -resize 256x256 icons/128x128@2x.png
 
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
