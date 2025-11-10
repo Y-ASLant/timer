@@ -2,6 +2,7 @@
 
 一个功能强大且美观的桌面计时器应用，基于 Tauri 2.0 构建。
 
+![Build](https://github.com/Y-ASLant/timer/workflows/Build/badge.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Tauri](https://img.shields.io/badge/Tauri-2.0-24C8DB.svg)
 
@@ -21,11 +22,17 @@
 
 前往 [Releases](https://github.com/Y-ASLant/timer/releases) 页面下载适合您系统的安装包：
 - Windows: `.msi` 或 `.exe` 安装程序
+- Linux: `.deb` (Debian/Ubuntu)、`.AppImage` (通用)、`.rpm` (Fedora/RHEL)
 
 ### 从源码构建
 
 **前置要求**
 - [Rust](https://www.rust-lang.org/) (最新稳定版)
+- Linux 系统需要额外安装依赖：
+  ```bash
+  # Debian/Ubuntu
+  sudo apt-get install libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libayatana-appindicator3-dev librsvg2-dev
+  ```
 
 **构建步骤**
 
@@ -91,7 +98,8 @@ tauri-Time/
 
 ## 📝 开发计划
 
-- [ ] 跨平台支持 (macOS, Linux)
+- [x] Linux 平台支持
+- [ ] macOS 平台支持
 - [ ] 检测更新
 
 ## 🤝 贡献
