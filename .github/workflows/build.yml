@@ -66,6 +66,13 @@ jobs:
         working-directory: ./src-tauri
         run: cargo tauri build --verbose
 
+      - name: Compress binaries (Linux)
+        if: matrix.platform.os == 'ubuntu-22.04'
+        run: |
+          # 使用UPX进一步压缩二进制文件
+          sudo apt-get install -y upx
+          find src-tauri/target/release -name "countdown-timer" -type f -exec upx --best --lzma {} \; || true
+
       - name: Upload artifacts (Windows)
         if: matrix.platform.os == 'windows-latest'
         uses: actions/upload-artifact@v4

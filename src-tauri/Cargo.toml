@@ -18,3 +18,10 @@ keepawake = "0.5" # 防止系统休眠
 [features]
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+strip = true      # 移除调试符号
+opt-level = "z"   # 优化大小
+lto = true        # 链接时优化
+codegen-units = 1 # 更好的优化（稍慢但体积更小）
+panic = "abort"   # 减小panic处理代码
