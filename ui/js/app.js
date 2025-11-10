@@ -4,6 +4,7 @@ let timerInterval = null;
 let currentEditingCard = null;
 let themeMode = 'auto'; // 'auto', 'light', 'dark'
 let currentLayout = '2x2'; // 当前布局：'2x2', '1x2', '2x1', '1x1'
+let latestReleaseUrl = ''; // 最新版本的下载链接
 
 // DOM 元素缓存
 let cardElementCache = new Map(); // Map<cardId, {cardEl, displayEl, labelEl}>
@@ -213,8 +214,8 @@ function updateThemeIcon() {
     const isDark = document.body.classList.contains('dark-mode');
     
     if (themeMode === 'auto') {
-        // 跟随系统图标
-        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>';
+        // 跟随系统图标（电脑显示器）
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>';
     } else if (isDark) {
         // 月亮图标（深色模式）
         icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>';
@@ -364,6 +365,10 @@ function openGlobalSettings() {
         btn.classList.toggle('active', btn.dataset.layout === currentLayout);
     });
     
+    // 加载GitHub Token
+    const savedToken = localStorage.getItem('githubToken') || '';
+    document.getElementById('github-token').value = savedToken;
+    
     document.getElementById('global-settings-overlay').classList.add('show');
 }
 
@@ -384,6 +389,14 @@ function saveGlobalSettings() {
             // 保存到localStorage
             localStorage.setItem('layoutMode', currentLayout);
         }
+    }
+    
+    // 保存GitHub Token
+    const githubToken = document.getElementById('github-token').value.trim();
+    if (githubToken) {
+        localStorage.setItem('githubToken', githubToken);
+    } else {
+        localStorage.removeItem('githubToken');
     }
     
     closeGlobalSettings();
@@ -553,6 +566,40 @@ function handleCardClick(e) {
 }
 
 function initEventListeners() {
+    // 标题点击跳转 GitHub
+    document.getElementById('app-title')?.addEventListener('click', async (e) => {
+        e.stopPropagation(); // 阻止拖拽事件
+        try {
+            if (window.__TAURI__?.shell) {
+                await window.__TAURI__.shell.open('https://github.com/Y-ASLant');
+            } else {
+                window.open('https://github.com/Y-ASLant', '_blank');
+            }
+        } catch (error) {
+            console.error('打开链接失败:', error);
+        }
+    });
+    
+    // Star 按钮点击
+    document.getElementById('star-button')?.addEventListener('click', async (e) => {
+        e.stopPropagation(); // 阻止拖拽事件
+        try {
+            if (window.__TAURI__?.shell) {
+                await window.__TAURI__.shell.open('https://github.com/Y-ASLant/timer');
+            } else {
+                window.open('https://github.com/Y-ASLant/timer', '_blank');
+            }
+        } catch (error) {
+            console.error('打开链接失败:', error);
+        }
+    });
+    
+    // 检查更新按钮
+    document.getElementById('check-update-btn')?.addEventListener('click', (e) => {
+        e.target.blur(); // 移除焦点
+        checkForUpdates();
+    });
+    
     // 全局设置按钮
     document.getElementById('global-settings-btn')?.addEventListener('click', (e) => {
         e.target.blur(); // 移除焦点
@@ -885,3 +932,133 @@ function formatTime(totalSeconds, precision = 0) {
 }
 
 // 时钟模式已由 startTimers() 中的定时器处理，无需重复定时器
+
+// 检查更新相关函数
+async function checkForUpdates() {
+    // 打开更新对话框
+    const updateOverlay = document.getElementById('update-overlay');
+    const downloadBtn = document.getElementById('download-update-btn');
+    updateOverlay.classList.add('show');
+    
+    // 重置UI状态
+    document.getElementById('latest-version').textContent = '检查中...';
+    document.getElementById('update-message').textContent = '正在检查更新...';
+    document.getElementById('update-message').className = 'text-sm text-gray-700 p-3 rounded-lg bg-blue-50 border border-blue-200';
+    downloadBtn.textContent = '立即下载'; // 重置按钮文本
+    downloadBtn.classList.add('hidden');
+    document.getElementById('update-notes-container').classList.add('hidden');
+    latestReleaseUrl = ''; // 重置链接
+    
+    try {
+        if (!invoke) {
+            throw new Error('Tauri invoke 不可用');
+        }
+        
+        // 获取GitHub Token（如果有）
+        const githubToken = localStorage.getItem('githubToken') || '';
+        
+        // 调用后端API检查更新
+        const result = await invoke('check_github_update', { githubToken });
+        
+        // 显示当前版本和最新版本
+        document.getElementById('current-version').textContent = result.current_version;
+        document.getElementById('latest-version').textContent = result.latest_version;
+        
+        if (result.has_update) {
+            // 有新版本
+            document.getElementById('update-message').textContent = '发现新版本！';
+            document.getElementById('update-message').className = 'text-sm text-gray-700 p-3 rounded-lg bg-green-50 border border-green-200';
+            downloadBtn.classList.remove('hidden');
+            latestReleaseUrl = result.download_url;
+            
+            // 显示更新说明
+            if (result.release_notes) {
+                document.getElementById('update-notes-container').classList.remove('hidden');
+                document.getElementById('update-notes').innerHTML = result.release_notes.replace(/\n/g, '<br>');
+            }
+        } else {
+            // 已是最新版本
+            document.getElementById('update-message').textContent = '已是最新版本';
+            document.getElementById('update-message').className = 'text-sm text-gray-700 p-3 rounded-lg bg-gray-50 border border-gray-200';
+        }
+    } catch (error) {
+        console.error('检查更新失败:', error);
+        document.getElementById('current-version').textContent = '未知';
+        document.getElementById('latest-version').textContent = '检查失败';
+        
+        // 改进错误信息显示
+        const errorMsg = typeof error === 'string' ? error : error.toString();
+        document.getElementById('update-message').innerHTML = errorMsg;
+        document.getElementById('update-message').className = 'text-sm text-gray-700 p-3 rounded-lg bg-red-50 border border-red-200';
+        
+        // 如果是403错误，仍然尝试下载（可能可以直接下载文件）
+        if (errorMsg.includes('403') || errorMsg.includes('访问受限')) {
+            downloadBtn.textContent = '尝试下载';
+            downloadBtn.classList.remove('hidden');
+            // 保持原有的下载URL，不改为releases页面
+        }
+    }
+}
+
+// 关闭更新对话框
+function closeUpdateDialog() {
+    document.getElementById('update-overlay').classList.remove('show');
+}
+
+// 下载更新
+async function downloadUpdate() {
+    if (!latestReleaseUrl) {
+        return;
+    }
+    
+    const downloadBtn = document.getElementById('download-update-btn');
+    const updateMessage = document.getElementById('update-message');
+    
+    try {
+        // 禁用按钮并显示下载中状态（添加加载动画）
+        downloadBtn.disabled = true;
+        downloadBtn.textContent = '下载中';
+        downloadBtn.classList.add('downloading');
+        updateMessage.textContent = '正在下载更新文件，请稍候';
+        updateMessage.className = 'text-sm text-gray-700 p-3 rounded-lg bg-blue-50 border border-blue-200 downloading-message';
+        
+        if (!invoke) {
+            throw new Error('Tauri invoke 不可用');
+        }
+        
+        // 调用后端下载文件（包括403错误情况也在应用内处理）
+        const filePath = await invoke('download_update_file', { downloadUrl: latestReleaseUrl });
+        
+        // 下载成功，安装程序已自动启动
+        downloadBtn.classList.remove('downloading');
+        updateMessage.textContent = `下载完成！\n安装程序已自动启动\n\n请按照安装向导完成更新`;
+        updateMessage.className = 'text-sm text-gray-700 p-3 rounded-lg bg-green-50 border border-green-200';
+        downloadBtn.textContent = '打开文件位置';
+        downloadBtn.disabled = false;
+        
+        // 更新按钮功能：点击打开文件夹
+        downloadBtn.onclick = async function() {
+            try {
+                if (window.__TAURI__?.shell) {
+                    // 提取文件夹路径
+                    const folderPath = filePath.substring(0, filePath.lastIndexOf('\\'));
+                    await window.__TAURI__.shell.open(folderPath);
+                }
+            } catch (err) {
+                console.error('打开文件夹失败:', err);
+                alert('无法打开文件夹，文件路径：\n' + filePath);
+            }
+        };
+        
+    } catch (error) {
+        console.error('下载失败:', error);
+        downloadBtn.classList.remove('downloading');
+        const errorMsg = typeof error === 'string' ? error : error.toString();
+        updateMessage.textContent = `下载失败: ${errorMsg}\n\n请检查网络连接后重试`;
+        updateMessage.className = 'text-sm text-gray-700 p-3 rounded-lg bg-red-50 border border-red-200';
+        downloadBtn.disabled = false;
+        downloadBtn.textContent = '重试下载';
+        // 恢复按钮原始功能
+        downloadBtn.onclick = downloadUpdate;
+    }
+}

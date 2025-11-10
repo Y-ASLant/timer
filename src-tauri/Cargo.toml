@@ -1,6 +1,6 @@
 [package]
 name = "countdown-timer"
-version = "1.0.0"
+version = "1.0.5"
 description = "计时器"
 authors = ["ASLant"]
 edition = "2021"
@@ -14,6 +14,8 @@ tauri-plugin-shell = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 keepawake = "0.5" # 防止系统休眠
+reqwest = { version = "0.12", features = ["json", "blocking"] } # HTTP 客户端
+semver = "1.0" # 版本比较
 
 [features]
 default = ["custom-protocol"]

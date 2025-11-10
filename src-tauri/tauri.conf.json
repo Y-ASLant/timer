@@ -42,7 +42,8 @@
             "core:window:allow-toggle-maximize",
             "core:window:allow-start-dragging",
             "core:window:allow-show",
-            "core:window:allow-set-fullscreen"
+            "core:window:allow-set-fullscreen",
+            "shell:allow-open"
           ]
         }
       ]

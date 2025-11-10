@@ -774,14 +774,16 @@ body.dark-mode .text-gray-700 {
 body.dark-mode #titlebar-minimize:hover,
 body.dark-mode #titlebar-maximize:hover,
 body.dark-mode #theme-toggle:hover,
-body.dark-mode #global-settings-btn:hover {
+body.dark-mode #global-settings-btn:hover,
+body.dark-mode #check-update-btn:hover {
     background: #2d2d2d !important;
 }
 
 body.dark-mode #titlebar-minimize svg,
 body.dark-mode #titlebar-maximize svg,
 body.dark-mode #theme-toggle svg,
-body.dark-mode #global-settings-btn svg {
+body.dark-mode #global-settings-btn svg,
+body.dark-mode #check-update-btn svg {
     color: #9ca3af !important;
 }
 
@@ -825,4 +827,142 @@ body.dark-mode #titlebar-close:hover svg {
 }
 .breathing-light {
     animation: breathing 2s ease-in-out infinite;
+}
+
+/* 更新对话框深色模式 */
+body.dark-mode .bg-gray-50 {
+    background: #1a1a1a !important;
+    color: #e5e7eb !important;
+}
+
+body.dark-mode .bg-blue-50 {
+    background: #1e3a5f !important;
+    border-color: #2563eb !important;
+    color: #93c5fd !important;
+}
+
+body.dark-mode .bg-green-50 {
+    background: #14532d !important;
+    border-color: #22c55e !important;
+    color: #86efac !important;
+}
+
+body.dark-mode .bg-red-50 {
+    background: #7f1d1d !important;
+    border-color: #ef4444 !important;
+    color: #fca5a5 !important;
+}
+
+body.dark-mode .text-gray-600 {
+    color: #9ca3af !important;
+}
+
+body.dark-mode .text-gray-800 {
+    color: #e5e7eb !important;
+}
+
+body.dark-mode .border-blue-200 {
+    border-color: #2563eb !important;
+}
+
+body.dark-mode .border-green-200 {
+    border-color: #22c55e !important;
+}
+
+body.dark-mode .border-red-200 {
+    border-color: #ef4444 !important;
+}
+
+body.dark-mode .border-gray-200 {
+    border-color: #404040 !important;
+}
+
+/* 标题链接样式 */
+#app-title:hover {
+    color: #2563eb !important;
+}
+
+body.dark-mode #app-title {
+    color: #9ca3af !important;
+}
+
+body.dark-mode #app-title:hover {
+    color: #60a5fa !important;
+}
+
+/* Star 按钮样式 */
+#star-button {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+#star-button:hover {
+    background: #e5e7eb;
+    color: #1f2937;
+}
+
+body.dark-mode #star-button {
+    background: #1f2937;
+    color: #9ca3af;
+    border-color: #374151;
+}
+
+body.dark-mode #star-button:hover {
+    background: #374151;
+    color: #e5e7eb;
+}
+
+/* 按钮禁用状态 */
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+button:disabled:hover {
+    transform: none !important;
+    background: inherit !important;
+}
+
+/* 更新消息框支持多行 */
+#update-message {
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* 下载按钮加载动画 */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.downloading::before {
+    content: '';
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-right: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+}
+
+/* 下载消息框加载动画 */
+.downloading-message::after {
+    content: '';
+    display: inline-block;
+    margin-left: 4px;
+    animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+    0%, 20% { content: ''; }
+    40% { content: '.'; }
+    60% { content: '..'; }
+    80%, 100% { content: '...'; }
 }
