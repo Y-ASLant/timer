@@ -9,6 +9,8 @@ let latestReleaseUrl = ''; // 最新版本的下载链接
 // DOM 元素缓存
 let cardElementCache = new Map(); // Map<cardId, {cardEl, displayEl, labelEl}>
 let dragRegionElement = null; // 缓存拖动区域元素
+let titlebarElement = null; // 缓存标题栏元素
+let mainGridElement = null; // 缓存主网格元素
 
 // 防休眠状态
 let isSleepPrevented = false;
@@ -17,10 +19,24 @@ let isSleepPrevented = false;
 let mouseHideTimer = null;
 const MOUSE_HIDE_DELAY = 2000; // 2秒后隐藏鼠标
 
+// 音频配置
+const AUDIO_CONFIG = [
+    { key: 'start', path: 'music/start.wav', volume: 1.0 },
+    { key: 'end', path: 'music/end.wav', volume: 1.0 },
+    { key: 'tick', path: 'music/tick.wav', volume: 1.0 }
+];
+
+// 时间常量
+const SECONDS_PER_MINUTE = 60;
+const SECONDS_PER_HOUR = 3600;
+const WARNING_THRESHOLD = 5; // 倒计时最后5秒警告
+
 // 音频元素
-let startSound = null;
-let endSound = null;
-let tickSound = null;
+const audioElements = {
+    start: null,
+    end: null,
+    tick: null
+};
 
 // 卡片数据
 let cards = [
@@ -32,8 +48,10 @@ let cards = [
 
 // 初始化 Tauri API
 window.addEventListener('DOMContentLoaded', async () => {
-    // 缓存拖动区域元素
+    // 缓存DOM元素
     dragRegionElement = document.querySelector('[data-tauri-drag-region]');
+    titlebarElement = document.getElementById('titlebar');
+    mainGridElement = document.getElementById('main-grid');
     
     if (window.__TAURI__) {
         const { getCurrentWindow } = window.__TAURI__.window;
@@ -47,23 +65,7 @@ window.addEventListener('DOMContentLoaded', async () => {
         });
         document.getElementById('titlebar-maximize')?.addEventListener('click', (e) => {
             removeButtonFocus(e);
-            isFullscreen = !isFullscreen;
-            appWindow.setFullscreen(isFullscreen);
-            
-            // 管理全屏状态
-            if (isFullscreen) {
-                // 进入全屏
-                handleMouseMove(); // 启动鼠标隐藏计时器
-                if (dragRegionElement) dragRegionElement.removeAttribute('data-tauri-drag-region'); // 禁用拖动
-            } else {
-                // 退出全屏
-                if (mouseHideTimer) {
-                    clearTimeout(mouseHideTimer);
-                    mouseHideTimer = null;
-                }
-                document.body.classList.remove('hide-cursor');
-                if (dragRegionElement) dragRegionElement.setAttribute('data-tauri-drag-region', ''); // 恢复拖动
-            }
+            toggleFullscreen();
         });
         document.getElementById('titlebar-close')?.addEventListener('click', (e) => {
             removeButtonFocus(e);
@@ -96,77 +98,83 @@ window.addEventListener('DOMContentLoaded', async () => {
 // 初始化音频
 function initAudio() {
     try {
-        // 使用相对路径加载音频文件（从 ui 文件夹）
-        startSound = new Audio('music/start.wav');
-        startSound.volume = 1.0; // 设置音量为100%
-        startSound.load();
-        
-        endSound = new Audio('music/end.wav');
-        endSound.volume = 1.0; // 设置音量为100%
-        endSound.load();
-        
-        tickSound = new Audio('music/tick.wav');
-        tickSound.volume = 1.0; // 设置音量为100%
-        tickSound.load();
-        
+        AUDIO_CONFIG.forEach(({ key, path, volume }) => {
+            audioElements[key] = new Audio(path);
+            audioElements[key].volume = volume;
+            audioElements[key].load();
+        });
         console.log('音频已初始化');
     } catch (error) {
         console.error('音频初始化失败:', error);
     }
 }
 
-// 播放开始音效
-function playStartSound() {
-    if (startSound) {
-        try {
-            startSound.currentTime = 0; // 重置播放位置
-            startSound.play().catch(err => {
-                console.error('播放开始音效失败:', err);
-            });
-        } catch (error) {
-            console.error('播放开始音效错误:', error);
-        }
+// 通用音频播放函数
+function playSound(soundKey) {
+    const audio = audioElements[soundKey];
+    if (!audio) return;
+    
+    try {
+        audio.currentTime = 0;
+        audio.play().catch(err => {
+            console.error(`播放${soundKey}音效失败:`, err);
+        });
+    } catch (error) {
+        console.error(`播放${soundKey}音效错误:`, error);
     }
 }
 
-// 播放结束音效
-function playEndSound() {
-    if (endSound) {
-        try {
-            endSound.currentTime = 0; // 重置播放位置
-            endSound.play().catch(err => {
-                console.error('播放结束音效失败:', err);
-            });
-        } catch (error) {
-            console.error('播放结束音效错误:', error);
-        }
+// 停止音频
+function stopSound(soundKey) {
+    const audio = audioElements[soundKey];
+    if (!audio || audio.paused) return;
+    
+    try {
+        audio.pause();
+        audio.currentTime = 0;
+    } catch (error) {
+        console.error(`停止${soundKey}音效错误:`, error);
     }
 }
 
-// 播放 tick 音效（每秒一次）
-function playTickSound() {
-    if (tickSound) {
-        try {
-            tickSound.currentTime = 0; // 重置播放位置
-            tickSound.play().catch(err => {
-                console.error('播放 tick 音效失败:', err);
-            });
-        } catch (error) {
-            console.error('播放 tick 音效错误:', error);
-        }
+// 快捷方法
+const playStartSound = () => playSound('start');
+const playEndSound = () => playSound('end');
+const playTickSound = () => playSound('tick');
+const stopTickSound = () => stopSound('tick');
+
+// 切换全屏状态
+function toggleFullscreen() {
+    if (!appWindow) return;
+    
+    isFullscreen = !isFullscreen;
+    appWindow.setFullscreen(isFullscreen);
+    
+    if (isFullscreen) {
+        enterFullscreen();
+    } else {
+        exitFullscreen();
     }
 }
 
-// 停止 tick 音效
-function stopTickSound() {
-    if (tickSound && !tickSound.paused) {
-        try {
-            tickSound.pause();
-            tickSound.currentTime = 0;
-        } catch (error) {
-            console.error('停止 tick 音效错误:', error);
-        }
+// 进入全屏
+function enterFullscreen() {
+    handleMouseMove(); // 启动鼠标隐藏计时器
+    if (dragRegionElement) dragRegionElement.removeAttribute('data-tauri-drag-region');
+    if (titlebarElement) titlebarElement.style.display = 'none';
+    if (mainGridElement) mainGridElement.style.height = '100vh';
+}
+
+// 退出全屏
+function exitFullscreen() {
+    if (mouseHideTimer) {
+        clearTimeout(mouseHideTimer);
+        mouseHideTimer = null;
     }
+    document.body.classList.remove('hide-cursor');
+    if (dragRegionElement) dragRegionElement.setAttribute('data-tauri-drag-region', '');
+    if (titlebarElement) titlebarElement.style.display = '';
+    if (mainGridElement) mainGridElement.style.height = '';
 }
 
 // 初始化主题
@@ -266,7 +274,7 @@ function renderCards() {
         const statusClass = getStatusClass(card);
         
         // 检查是否是倒计时模式且最后5秒
-        const isWarning = card.mode === 'countdown' && card.isRunning && !card.isPaused && card.remainingTime <= 5 && card.remainingTime > 0;
+        const isWarning = card.mode === 'countdown' && card.isRunning && !card.isPaused && card.remainingTime <= WARNING_THRESHOLD && card.remainingTime > 0;
         
         // 使用 classList 设置类名
         cardEl.classList.add('timer-card');
@@ -501,7 +509,7 @@ function saveConfig() {
     currentEditingCard.minutes = minutes;
     currentEditingCard.seconds = seconds;
     
-    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+    const totalSeconds = hours * SECONDS_PER_HOUR + minutes * SECONDS_PER_MINUTE + seconds;
     currentEditingCard.totalSeconds = totalSeconds;
     
     // 如果倒计时已结束（remainingTime为0）或未运行，则重置remainingTime
@@ -689,7 +697,7 @@ function startTimers() {
                         card.remainingTime -= 1;
                         
                         // 减少后检查剩余时间（1-5秒播放tick，0秒播放end）
-                        if (card.remainingTime >= 1 && card.remainingTime <= 5) {
+                        if (card.remainingTime >= 1 && card.remainingTime <= WARNING_THRESHOLD) {
                             playTickSound();
                         } else if (card.remainingTime <= 0) {
                             card.remainingTime = 0;
@@ -730,7 +738,7 @@ function updateCardDisplays() {
         }
         
         // 检查是否是倒计时模式且最后5秒
-        const isWarning = card.mode === 'countdown' && card.isRunning && !card.isPaused && card.remainingTime <= 5 && card.remainingTime > 0;
+        const isWarning = card.mode === 'countdown' && card.isRunning && !card.isPaused && card.remainingTime <= WARNING_THRESHOLD && card.remainingTime > 0;
         const statusClass = getStatusClass(card);
         
         // 使用 classList 更新卡片样式
@@ -793,16 +801,7 @@ function handleKeyPress(e) {
                 // 没有弹窗时才退出全屏
                 isFullscreen = false;
                 appWindow.setFullscreen(false);
-                
-                // 退出全屏，恢复所有状态
-                if (mouseHideTimer) {
-                    clearTimeout(mouseHideTimer);
-                    mouseHideTimer = null;
-                }
-                document.body.classList.remove('hide-cursor');
-                
-                // 恢复拖动功能
-                if (dragRegionElement) dragRegionElement.setAttribute('data-tauri-drag-region', '');
+                exitFullscreen();
             }
             break;
         case '1':
@@ -862,25 +861,7 @@ function handleKeyPress(e) {
             break;
         case 'F11':
             e.preventDefault();
-            if (appWindow) {
-                isFullscreen = !isFullscreen;
-                appWindow.setFullscreen(isFullscreen);
-                
-                // 管理全屏状态
-                if (isFullscreen) {
-                    // 进入全屏
-                    handleMouseMove(); // 启动鼠标隐藏计时器
-                    if (dragRegionElement) dragRegionElement.removeAttribute('data-tauri-drag-region'); // 禁用拖动
-                } else {
-                    // 退出全屏
-                    if (mouseHideTimer) {
-                        clearTimeout(mouseHideTimer);
-                        mouseHideTimer = null;
-                    }
-                    document.body.classList.remove('hide-cursor');
-                    if (dragRegionElement) dragRegionElement.setAttribute('data-tauri-drag-region', ''); // 恢复拖动
-                }
-            }
+            toggleFullscreen();
             break;
         case 'F12':
             e.preventDefault();
@@ -925,9 +906,9 @@ function toggleButtonGroup(button, selector, activeClass = 'active') {
 
 // 格式化时间
 function formatTime(totalSeconds, precision = 0) {
-    const hours = Math.floor(totalSeconds / 3600);
-    const minutes = Math.floor((totalSeconds % 3600) / 60);
-    const seconds = Math.floor(totalSeconds % 60);
+    const hours = Math.floor(totalSeconds / SECONDS_PER_HOUR);
+    const minutes = Math.floor((totalSeconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE);
+    const seconds = Math.floor(totalSeconds % SECONDS_PER_MINUTE);
     
     const h = String(hours).padStart(2, '0');
     const m = String(minutes).padStart(2, '0');
