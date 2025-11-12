@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "计时器",
+  "productName": "CountdownTimer",
   "version": "1.0.7",
   "identifier": "top.aslant.countdown",
   "build": {
@@ -58,6 +58,16 @@
       "../icons/128x128@2x.png",
       "../icons/icon.ico"
     ],
+    "linux": {
+      "deb": {
+        "depends": [],
+        "files": {}
+      },
+      "rpm": {
+        "depends": [],
+        "files": {}
+      }
+    },
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
