@@ -1,6 +1,6 @@
 [package]
 name = "countdown-timer"
-version = "1.0.7"
+version = "1.0.8"
 description = "A powerful countdown timer application"
 authors = ["ASLant"]
 edition = "2021"
