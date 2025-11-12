@@ -86,12 +86,15 @@ fn create_http_client(timeout_secs: u64) -> Result<Client, String> {
 
 // 检查GitHub更新
 #[tauri::command]
-fn check_github_update(github_token: String) -> Result<UpdateCheckResult, String> {
+fn check_github_update() -> Result<UpdateCheckResult, String> {
     let client = create_http_client(REQUEST_TIMEOUT_SECS)?;
     let mut request = client.get(GITHUB_REPO_URL);
 
-    if !github_token.is_empty() {
-        request = request.header("Authorization", format!("token {}", github_token));
+    // 使用编译时嵌入的 GitHub Token
+    if let Some(token) = option_env!("GITHUB_API_TOKEN") {
+        if !token.is_empty() {
+            request = request.header("Authorization", format!("token {}", token));
+        }
     }
 
     // 请求最新版本信息
@@ -104,13 +107,11 @@ fn check_github_update(github_token: String) -> Result<UpdateCheckResult, String
     if !status.is_success() {
         return match status.as_u16() {
             403 => {
-                if github_token.is_empty() {
-                    Err("GitHub API访问受限<br><br>解决方案：<br>1. 在全局设置中配置GitHub Token（推荐）<br>2. 关闭VPN后重试<br>3. 访问 <a href='https://github.com/Y-ASLant/timer/releases' target='_blank'>GitHub Releases</a>".to_string())
+                let has_token = option_env!("GITHUB_API_TOKEN").map_or(false, |t| !t.is_empty());
+                if has_token {
+                    Err("GitHub Token可能无效或已过期<br><br>请联系开发者更新Token".to_string())
                 } else {
-                    Err(
-                        "GitHub Token可能无效或已过期<br><br>请在全局设置中重新配置Token"
-                            .to_string(),
-                    )
+                    Err("GitHub API访问受限<br><br>解决方案：<br>1. 关闭VPN后重试<br>2. 访问 <a href='https://github.com/Y-ASLant/timer/releases' target='_blank'>GitHub Releases</a>".to_string())
                 }
             }
             404 => Err("未找到版本信息，仓库可能不存在或尚无发布版本".to_string()),

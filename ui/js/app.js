@@ -373,9 +373,7 @@ function openGlobalSettings() {
         btn.classList.toggle('active', btn.dataset.layout === currentLayout);
     });
     
-    // 加载GitHub Token
-    const savedToken = localStorage.getItem('githubToken') || '';
-    document.getElementById('github-token').value = savedToken;
+    // GitHub Token 现在通过编译时嵌入，无需用户配置
     
     document.getElementById('global-settings-overlay').classList.add('show');
 }
@@ -399,13 +397,7 @@ function saveGlobalSettings() {
         }
     }
     
-    // 保存GitHub Token
-    const githubToken = document.getElementById('github-token').value.trim();
-    if (githubToken) {
-        localStorage.setItem('githubToken', githubToken);
-    } else {
-        localStorage.removeItem('githubToken');
-    }
+    // GitHub Token 现在通过编译时嵌入，无需保存
     
     closeGlobalSettings();
 }
@@ -940,11 +932,8 @@ async function checkForUpdates() {
             throw new Error('Tauri invoke 不可用');
         }
         
-        // 获取GitHub Token（如果有）
-        const githubToken = localStorage.getItem('githubToken') || '';
-        
         // 调用后端API检查更新
-        const result = await invoke('check_github_update', { githubToken });
+        const result = await invoke('check_github_update');
         
         // 显示当前版本和最新版本
         document.getElementById('current-version').textContent = result.current_version;

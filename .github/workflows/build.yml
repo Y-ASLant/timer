@@ -68,6 +68,8 @@ jobs:
       - name: Build Tauri app
         working-directory: ./src-tauri
         run: cargo tauri build --verbose
+        env:
+          GITHUB_API_TOKEN: ${{ secrets.API_TOKEN }}
 
       - name: Compress binaries (Linux)
         if: matrix.platform.os == 'ubuntu-22.04'
