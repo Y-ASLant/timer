@@ -101,14 +101,14 @@ input, textarea {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-family: 'G7 Segment', monospace;
+    font-family: 'G7 Segment';
     font-weight: normal;
     letter-spacing: 0.05em;
     padding: 2rem;
 }
 
 .timer-display {
-    font-family: 'G7 Segment', monospace !important;
+    font-family: 'G7 Segment'!important;
 }
 
 .digit {
@@ -370,7 +370,7 @@ input[type="text"]:focus {
     grid-template-rows: repeat(2, 1fr);
     gap: 1rem;
     padding: 1rem;
-    height: 100%;
+    height: calc(100% - 2.5rem);
     background: #f8f9fa;
     transition: background 0.3s ease; /* 添加背景过渡动画 */
 }
@@ -468,11 +468,10 @@ input[type="text"]:focus {
 }
 
 .card-display {
-    font-family: 'G7 Segment', monospace !important;
+    font-family: 'G7 Segment'!important;
     color: var(--card-color, #FFFF00); /* 使用 CSS 变量，默认黄色 */
-    font-size: var(--card-font-size, 6rem); /* 使用 CSS 变量，默认 6rem */
+    font-size: var(--card-font-size, 8rem); /* 使用 CSS 变量，默认 6rem */
     text-align: center;
-    letter-spacing: 0.05em;
 }
 
 /* 合并卡片 */

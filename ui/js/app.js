@@ -40,10 +40,10 @@ const audioElements = {
 
 // 卡片数据
 let cards = [
-    { id: 1, mode: 'countdown', color: '#FFFF00', hours: 2, minutes: 0, seconds: 0, fontSize: 6, span: 'normal', isRunning: false, isPaused: false, totalSeconds: 7200, remainingTime: 7200, stopwatchTime: 0, counterValue: 0 },
-    { id: 2, mode: 'countdown', color: '#FFFF00', hours: 2, minutes: 0, seconds: 0, fontSize: 6, span: 'normal', isRunning: false, isPaused: false, totalSeconds: 7200, remainingTime: 7200, stopwatchTime: 0, counterValue: 0 },
-    { id: 3, mode: 'countdown', color: '#FFFF00', hours: 2, minutes: 0, seconds: 0, fontSize: 6, span: 'normal', isRunning: false, isPaused: false, totalSeconds: 7200, remainingTime: 7200, stopwatchTime: 0, counterValue: 0 },
-    { id: 4, mode: 'countdown', color: '#FFFF00', hours: 2, minutes: 0, seconds: 0, fontSize: 6, span: 'normal', isRunning: false, isPaused: false, totalSeconds: 7200, remainingTime: 7200, stopwatchTime: 0, counterValue: 0 }
+    { id: 1, mode: 'countdown', color: '#FFFF00', hours: 2, minutes: 0, seconds: 0, fontSize: 8, span: 'normal', isRunning: false, isPaused: false, totalSeconds: 7200, remainingTime: 7200, stopwatchTime: 0, counterValue: 0 },
+    { id: 2, mode: 'countdown', color: '#FFFF00', hours: 2, minutes: 0, seconds: 0, fontSize: 8, span: 'normal', isRunning: false, isPaused: false, totalSeconds: 7200, remainingTime: 7200, stopwatchTime: 0, counterValue: 0 },
+    { id: 3, mode: 'countdown', color: '#FFFF00', hours: 2, minutes: 0, seconds: 0, fontSize: 8, span: 'normal', isRunning: false, isPaused: false, totalSeconds: 7200, remainingTime: 7200, stopwatchTime: 0, counterValue: 0 },
+    { id: 4, mode: 'countdown', color: '#FFFF00', hours: 2, minutes: 0, seconds: 0, fontSize: 8, span: 'normal', isRunning: false, isPaused: false, totalSeconds: 7200, remainingTime: 7200, stopwatchTime: 0, counterValue: 0 }
 ];
 
 // 初始化 Tauri API
@@ -354,7 +354,7 @@ function openConfig(cardId) {
     document.getElementById('config-seconds').value = currentEditingCard.seconds;
     
     // 加载字体大小
-    const fontSize = currentEditingCard.fontSize || 6;
+    const fontSize = Math.max(2, currentEditingCard.fontSize || 8);
     document.getElementById('font-size').value = fontSize.toFixed(1);
     
     document.getElementById('config-overlay').classList.add('show');
@@ -479,7 +479,14 @@ function saveConfig() {
     }
     
     // 获取字体大小
-    currentEditingCard.fontSize = parseFloat(document.getElementById('font-size').value) || 6;
+    let fontSize = parseFloat(document.getElementById('font-size').value);
+    if (isNaN(fontSize)) {
+        fontSize = 8;
+    }
+    if (fontSize < 2) {
+        fontSize = 2;
+    }
+    currentEditingCard.fontSize = fontSize;
     
     // 获取时间设置
     let hours = parseInt(document.getElementById('config-hours').value) || 0;

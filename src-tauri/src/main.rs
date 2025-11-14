@@ -100,7 +100,7 @@ fn check_github_update() -> Result<UpdateCheckResult, String> {
     // 请求最新版本信息
     let response = request
         .send()
-        .map_err(|e| format!("网络请求失败，请检查网络连接: {}", e))?;
+        .map_err(|e| format!("网络连接失败，应用可正常离线使用: {}", e))?;
 
     // 详细处理不同的HTTP状态码
     let status = response.status();
