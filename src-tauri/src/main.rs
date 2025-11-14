@@ -84,62 +84,70 @@ fn create_http_client(timeout_secs: u64) -> Result<Client, String> {
         .map_err(|e| format!("创建HTTP客户端失败: {}", e))
 }
 
-// 检查GitHub更新
+// 检查GitHub更新（异步，在后台线程中执行，避免阻塞UI）
 #[tauri::command]
-fn check_github_update() -> Result<UpdateCheckResult, String> {
-    let client = create_http_client(REQUEST_TIMEOUT_SECS)?;
-    let mut request = client.get(GITHUB_REPO_URL);
+async fn check_github_update() -> Result<UpdateCheckResult, String> {
+    let result = tauri::async_runtime::spawn_blocking(|| {
+        let client = create_http_client(REQUEST_TIMEOUT_SECS)?;
+        let mut request = client.get(GITHUB_REPO_URL);
 
-    // 使用编译时嵌入的 GitHub Token
-    if let Some(token) = option_env!("GITHUB_API_TOKEN") {
-        if !token.is_empty() {
-            request = request.header("Authorization", format!("token {}", token));
-        }
-    }
-
-    // 请求最新版本信息
-    let response = request
-        .send()
-        .map_err(|e| format!("网络连接失败，应用可正常离线使用: {}", e))?;
-
-    // 详细处理不同的HTTP状态码
-    let status = response.status();
-    if !status.is_success() {
-        return match status.as_u16() {
-            403 => {
-                let has_token = option_env!("GITHUB_API_TOKEN").map_or(false, |t| !t.is_empty());
-                if has_token {
-                    Err("GitHub Token可能无效或已过期<br><br>请联系开发者更新Token".to_string())
-                } else {
-                    Err("GitHub API访问受限<br><br>解决方案：<br>1. 关闭VPN后重试<br>2. 访问 <a href='https://github.com/Y-ASLant/timer/releases' target='_blank'>GitHub Releases</a>".to_string())
-                }
+        // 使用编译时嵌入的 GitHub Token
+        if let Some(token) = option_env!("GITHUB_API_TOKEN") {
+            if !token.is_empty() {
+                request = request.header("Authorization", format!("token {}", token));
             }
-            404 => Err("未找到版本信息，仓库可能不存在或尚无发布版本".to_string()),
-            _ => Err(format!("GitHub API返回错误 ({}): 请稍后再试", status)),
-        };
-    }
+        }
 
-    let release: GitHubRelease = response
-        .json()
-        .map_err(|e| format!("解析版本信息失败: {}", e))?;
+        // 请求最新版本信息
+        let response = request
+            .send()
+            .map_err(|e| format!("网络连接失败，应用可正常离线使用: {}", e))?;
 
-    let latest_version_str = release.tag_name.trim_start_matches('v');
-    let current = Version::parse(env!("CARGO_PKG_VERSION"))
-        .map_err(|e| format!("解析当前版本失败: {}", e))?;
-    let latest = Version::parse(latest_version_str)
-        .map_err(|e| format!("解析最新版本号失败: {}，可能版本格式不标准", e))?;
+        // 详细处理不同的HTTP状态码
+        let status = response.status();
+        if !status.is_success() {
+            return match status.as_u16() {
+                403 => {
+                    let has_token =
+                        option_env!("GITHUB_API_TOKEN").map_or(false, |t| !t.is_empty());
+                    if has_token {
+                        Err("GitHub Token可能无效或已过期<br><br>请联系开发者更新Token".to_string())
+                    } else {
+                        Err("GitHub API访问受限<br><br>解决方案：<br>1. 关闭VPN后重试<br>2. 访问 <a href='https://github.com/Y-ASLant/timer/releases' target='_blank'>GitHub Releases</a>".to_string())
+                    }
+                }
+                404 => Err("未找到版本信息，仓库可能不存在或尚无发布版本".to_string()),
+                _ => Err(format!("GitHub API返回错误 ({}): 请稍后再试", status)),
+            };
+        }
 
-    let has_update = latest > current;
+        let release: GitHubRelease = response
+            .json()
+            .map_err(|e| format!("解析版本信息失败: {}", e))?;
 
-    let download_url = find_installer_url(&release.assets).unwrap_or(release.html_url);
+        let latest_version_str = release.tag_name.trim_start_matches('v');
+        let current = Version::parse(env!("CARGO_PKG_VERSION"))
+            .map_err(|e| format!("解析当前版本失败: {}", e))?;
+        let latest = Version::parse(latest_version_str)
+            .map_err(|e| format!("解析最新版本号失败: {}，可能版本格式不标准", e))?;
 
-    Ok(UpdateCheckResult {
-        has_update,
-        current_version: env!("CARGO_PKG_VERSION").to_string(),
-        latest_version: latest_version_str.to_string(),
-        download_url,
-        release_notes: release.body,
+        let has_update = latest > current;
+
+        let download_url =
+            find_installer_url(&release.assets).unwrap_or(release.html_url);
+
+        Ok::<UpdateCheckResult, String>(UpdateCheckResult {
+            has_update,
+            current_version: env!("CARGO_PKG_VERSION").to_string(),
+            latest_version: latest_version_str.to_string(),
+            download_url,
+            release_notes: release.body,
+        })
     })
+    .await
+    .map_err(|e| format!("更新检查任务执行失败: {}", e))??;
+
+    Ok(result)
 }
 
 // 查找安装包URL（优先级：setup.exe > .msi）

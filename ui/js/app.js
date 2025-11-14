@@ -5,6 +5,7 @@ let currentEditingCard = null;
 let themeMode = 'auto'; // 'auto', 'light', 'dark'
 let currentLayout = '2x2'; // 当前布局：'2x2', '1x2', '2x1', '1x1'
 let latestReleaseUrl = ''; // 最新版本的下载链接
+let currentDigitFont = 'lcd'; // 数字显示字体：'lcd' | 'g7'
 
 // DOM 元素缓存
 let cardElementCache = new Map(); // Map<cardId, {cardEl, displayEl, labelEl}>
@@ -87,6 +88,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     
     // 初始化主题
     initTheme();
+    
+    // 初始化数字显示字体
+    initDigitFont();
     
     // 初始化布局
     initLayout();
@@ -206,6 +210,25 @@ function applyTheme() {
     }
     
     updateThemeIcon();
+}
+
+// 初始化数字显示字体
+function initDigitFont() {
+    const savedFont = localStorage.getItem('digitFont') || 'lcd';
+    currentDigitFont = savedFont === 'g7' ? 'g7' : 'lcd';
+    applyDigitFont();
+}
+
+// 应用数字显示字体到 CSS 变量并更新按钮状态
+function applyDigitFont() {
+    const root = document.documentElement;
+    const fontFamily = currentDigitFont === 'g7' ? "'G7 Segment'" : "'LCD'";
+    root.style.setProperty('--digit-font-family', fontFamily);
+    
+    document.querySelectorAll('.font-btn').forEach(btn => {
+        const isActive = btn.dataset.font === currentDigitFont;
+        btn.classList.toggle('active', isActive);
+    });
 }
 
 // 初始化布局
@@ -602,6 +625,17 @@ function initEventListeners() {
         btn.addEventListener('click', (e) => {
             removeButtonFocus(e);
             toggleButtonGroup(btn, '.layout-btn');
+        });
+    });
+    
+    // 数字字体切换
+    document.querySelectorAll('.font-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            removeButtonFocus(e);
+            const font = btn.dataset.font === 'g7' ? 'g7' : 'lcd';
+            currentDigitFont = font;
+            localStorage.setItem('digitFont', currentDigitFont);
+            applyDigitFont();
         });
     });
     

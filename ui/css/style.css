@@ -6,7 +6,15 @@
     src: url('../font/HarmonyOS_Sans_SC_Regular.woff2') format('woff2');
 }
 
-/* 液晶数码字体 */
+/* LCD 数码字体 */
+@font-face {
+    font-family: 'LCD';
+    src: url('../font/LCDAT&TPhoneTimeDate-Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+}
+
+/* G7 数码管字体 */
 @font-face {
     font-family: 'G7 Segment';
     src: url('../font/G7_Segment_7a.ttf') format('truetype');
@@ -17,6 +25,10 @@
 /* 全局使用 HarmonyOS Sans SC */
 * {
     font-family: 'HarmonyOS Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+}
+
+:root {
+    --digit-font-family: 'LCD';
 }
 
 body {
@@ -39,12 +51,12 @@ body.hide-cursor * {
 /* 鼠标隐藏时禁用悬停效果 */
 body.hide-cursor .timer-card:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-    transform: none !important;
+    border-color: transparent !important;
 }
 
 body.hide-cursor.dark-mode .timer-card:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
-    transform: none !important;
+    border-color: #2d2d2d !important;
 }
 
 /* 禁止文字选中 */
@@ -101,14 +113,14 @@ input, textarea {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-family: 'G7 Segment';
+    font-family: var(--digit-font-family, 'G7 Segment'), monospace !important;
     font-weight: normal;
     letter-spacing: 0.05em;
     padding: 2rem;
 }
 
 .timer-display {
-    font-family: 'G7 Segment'!important;
+    font-family: var(--digit-font-family, 'G7 Segment'), monospace !important;
 }
 
 .digit {
@@ -384,14 +396,15 @@ input[type="text"]:focus {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease; /* 只过渡必要属性 */
+    transition: box-shadow 0.3s ease, background 0.3s ease, border-color 0.3s ease;
     position: relative;
     cursor: pointer;
 }
 
 .timer-card:hover {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.4), 0 4px 16px rgba(0, 0, 0, 0.2);
+    border-color: rgba(59, 130, 246, 0.6);
+    background: rgba(59, 130, 246, 0.02);
 }
 
 /* 卡片区域标签 */
@@ -468,21 +481,18 @@ input[type="text"]:focus {
 }
 
 .card-display {
-    font-family: 'G7 Segment'!important;
+    font-family: var(--digit-font-family, 'G7 Segment'), monospace !important;
     color: var(--card-color, #FFFF00); /* 使用 CSS 变量，默认黄色 */
     font-size: var(--card-font-size, 8rem); /* 使用 CSS 变量，默认 6rem */
     text-align: center;
+    /* 优化字体渲染，防止闪烁 */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    will-change: auto; /* 避免不必要的 GPU 加速 */
 }
 
 /* 合并卡片 */
-.card-span-h {
-    grid-column: span 2;
-}
-
-.card-span-v {
-    grid-row: span 2;
-}
-
 .card-span-full {
     grid-column: span 2;
     grid-row: span 2;
@@ -560,6 +570,29 @@ input[type="text"]:focus {
     border-color: #3b82f6;
 }
 
+/* 字体选择按钮 */
+.font-btn {
+    padding: 0.75rem;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 0.3rem;
+    background: white;
+    color: #6b7280;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s, background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+.font-btn:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.font-btn.active {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
 /* 深色模式 */
 body.dark-mode {
     background: #0a0a0a;
@@ -576,8 +609,8 @@ body.dark-mode .timer-card {
 }
 
 body.dark-mode .timer-card:hover {
-    border-color: #404040;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    border-color: rgba(59, 130, 246, 0.5);
+    box-shadow: 0 8px 32px rgba(59, 130, 246, 0.3), 0 4px 16px rgba(0, 0, 0, 0.7);
 }
 
 body.dark-mode .card-label {
