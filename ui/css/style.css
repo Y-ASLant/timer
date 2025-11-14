@@ -709,6 +709,22 @@ body.dark-mode .layout-btn.active {
     color: white;
 }
 
+body.dark-mode .font-btn {
+    background: #1a1a1a;
+    color: #9ca3af;
+    border-color: #404040;
+}
+
+body.dark-mode .font-btn:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+body.dark-mode .font-btn.active {
+    background: #3b82f6;
+    color: white;
+}
+
 body.dark-mode input {
     background: #0f0f0f;
     color: #e5e7eb;
