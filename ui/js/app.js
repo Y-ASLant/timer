@@ -53,7 +53,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     dragRegionElement = document.querySelector('[data-tauri-drag-region]');
     titlebarElement = document.getElementById('titlebar');
     mainGridElement = document.getElementById('main-grid');
-    
+
     if (window.__TAURI__) {
         const { getCurrentWindow } = window.__TAURI__.window;
         appWindow = getCurrentWindow();
@@ -79,22 +79,25 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     // 初始化音频
     initAudio();
-    
+
+    // 加载卡片配置
+    loadCardsConfig();
+
     // 初始化卡片
     renderCards();
-    
+
     // 初始化事件监听
     initEventListeners();
-    
+
     // 初始化主题
     initTheme();
-    
+
     // 初始化数字显示字体
     initDigitFont();
-    
+
     // 初始化布局
     initLayout();
-    
+
     // 启动定时器
     startTimers();
 });
@@ -546,7 +549,55 @@ function saveConfig() {
     
     // 只更新样式，避免完全重建 DOM
     updateCardStyle(cardId);
+
+    // 保存卡片配置到 localStorage
+    saveCardsConfig();
+
     closeConfig();
+}
+
+// 保存卡片配置到 localStorage
+function saveCardsConfig() {
+    try {
+        const cardsConfig = cards.map(card => ({
+            id: card.id,
+            mode: card.mode,
+            color: card.color,
+            hours: card.hours,
+            minutes: card.minutes,
+            seconds: card.seconds,
+            fontSize: card.fontSize,
+            totalSeconds: card.totalSeconds
+        }));
+        localStorage.setItem('cardsConfig', JSON.stringify(cardsConfig));
+    } catch (error) {
+        console.error('保存卡片配置失败:', error);
+    }
+}
+
+// 从 localStorage 加载卡片配置
+function loadCardsConfig() {
+    try {
+        const savedConfig = localStorage.getItem('cardsConfig');
+        if (savedConfig) {
+            const cardsConfig = JSON.parse(savedConfig);
+            cardsConfig.forEach(savedCard => {
+                const card = cards.find(c => c.id === savedCard.id);
+                if (card) {
+                    card.mode = savedCard.mode || 'countdown';
+                    card.color = savedCard.color || '#FFFF00';
+                    card.hours = savedCard.hours || 0;
+                    card.minutes = savedCard.minutes || 0;
+                    card.seconds = savedCard.seconds || 0;
+                    card.fontSize = savedCard.fontSize || 8;
+                    card.totalSeconds = savedCard.totalSeconds || 0;
+                    card.remainingTime = card.totalSeconds;
+                }
+            });
+        }
+    } catch (error) {
+        console.error('加载卡片配置失败:', error);
+    }
 }
 
 // 重置单个卡片
