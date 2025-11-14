@@ -476,7 +476,7 @@ input[type="text"]:focus {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
+    padding: 0; /* 移除padding,确保左右对称 */
     background: #000;
 }
 
@@ -485,6 +485,7 @@ input[type="text"]:focus {
     color: var(--card-color, #FFFF00); /* 使用 CSS 变量，默认黄色 */
     font-size: var(--card-font-size, 8rem); /* 使用 CSS 变量，默认 6rem */
     text-align: center;
+    width: 100%; /* 确保宽度100%,让文字居中更精确 */
     /* 优化字体渲染，防止闪烁 */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
