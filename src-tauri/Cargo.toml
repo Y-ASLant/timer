@@ -11,6 +11,7 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-shell = "2"
+tauri-plugin-single-instance = "2" # 单实例限制
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 keepawake = "0.5" # 防止系统休眠

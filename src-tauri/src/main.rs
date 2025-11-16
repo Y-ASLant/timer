@@ -252,6 +252,13 @@ fn launch_installer(file_path: &std::path::Path) -> Result<(), String> {
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            // 当尝试启动第二个实例时，聚焦到第一个实例的窗口
+            let _ = app
+                .get_webview_window("main")
+                .expect("no main window")
+                .set_focus();
+        }))
         .manage(AppState {
             keep_awake: Mutex::new(None),
         })
