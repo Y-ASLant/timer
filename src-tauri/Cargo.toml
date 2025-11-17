@@ -1,6 +1,6 @@
 [package]
 name = "countdown-timer"
-version = "1.0.8"
+version = "1.0.9"
 description = "A powerful countdown timer application"
 authors = ["ASLant"]
 edition = "2021"
@@ -17,6 +17,7 @@ serde_json = "1"
 keepawake = "0.5" # 防止系统休眠
 reqwest = { version = "0.12", features = ["json", "blocking"] } # HTTP 客户端
 semver = "1.0" # 版本比较
+chrono = "0.4" # 时间处理
 
 [features]
 default = ["custom-protocol"]

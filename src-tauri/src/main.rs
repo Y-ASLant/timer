@@ -5,7 +5,8 @@ use keepawake::{Builder, KeepAwake};
 use reqwest::blocking::Client;
 use semver::Version;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
+use std::fs::{File, OpenOptions};
+use std::io::Write;
 use std::sync::Mutex;
 use tauri::Manager;
 
@@ -48,6 +49,65 @@ fn prevent_sleep(state: tauri::State<AppState>) -> Result<(), String> {
 fn allow_sleep(state: tauri::State<AppState>) -> Result<(), String> {
     *state.keep_awake.lock().unwrap() = None;
     Ok(())
+}
+
+// 写入日志到文件
+#[tauri::command]
+fn write_log(_app_handle: tauri::AppHandle, message: String) -> Result<(), String> {
+    // 获取可执行文件所在目录（软件安装目录）
+    let exe_path = std::env::current_exe()
+        .map_err(|e| format!("无法获取可执行文件路径: {}", e))?;
+    
+    let exe_dir = exe_path.parent()
+        .ok_or_else(|| "无法获取可执行文件目录".to_string())?;
+
+    // 日志文件直接保存在可执行文件目录
+    let log_file_path = exe_dir.join("app.log");
+
+    // 检查日志文件大小，如果超过10MB则清空
+    const MAX_LOG_SIZE: u64 = 10 * 1024 * 1024; // 10MB
+    if log_file_path.exists() {
+        if let Ok(metadata) = std::fs::metadata(&log_file_path) {
+            if metadata.len() > MAX_LOG_SIZE {
+                // 清空日志文件（创建新文件覆盖旧文件）
+                let _ = std::fs::write(&log_file_path, "");
+                
+                // 写入清空标记
+                if let Ok(mut file) = OpenOptions::new().append(true).open(&log_file_path) {
+                    let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
+                    let _ = writeln!(file, "[{}] [INFO] 日志文件已自动清空（超过10MB）", timestamp);
+                }
+            }
+        }
+    }
+
+    // 以追加模式打开文件
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&log_file_path)
+        .map_err(|e| format!("打开日志文件失败: {} (路径: {:?})", e, log_file_path))?;
+
+    // 写入日志（添加时间戳）
+    let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
+    writeln!(file, "[{}] {}", timestamp, message)
+        .map_err(|e| format!("写入日志失败: {}", e))?;
+
+    Ok(())
+}
+
+// 获取日志文件路径
+#[tauri::command]
+fn get_log_path(_app_handle: tauri::AppHandle) -> Result<String, String> {
+    // 获取可执行文件所在目录（软件安装目录）
+    let exe_path = std::env::current_exe()
+        .map_err(|e| format!("无法获取可执行文件路径: {}", e))?;
+    
+    let exe_dir = exe_path.parent()
+        .ok_or_else(|| "无法获取可执行文件目录".to_string())?;
+    
+    let log_file_path = exe_dir.join("app.log");
+    Ok(log_file_path.to_string_lossy().to_string())
 }
 
 // GitHub Release API响应结构
@@ -266,7 +326,9 @@ fn main() {
             prevent_sleep,
             allow_sleep,
             check_github_update,
-            download_update_file
+            download_update_file,
+            write_log,
+            get_log_path
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -7,6 +7,35 @@ let currentLayout = '2x2'; // 当前布局：'2x2', '1x2', '2x1', '1x1'
 let latestReleaseUrl = ''; // 最新版本的下载链接
 let currentDigitFont = 'lcd'; // 数字显示字体：'lcd' | 'g7'
 
+// ==================== 日志管理 ====================
+// 日志函数：同时输出到控制台和文件
+async function log(message, level = 'INFO') {
+    const timestamp = new Date().toLocaleTimeString();
+    const logMessage = `[${timestamp}] [${level}] ${message}`;
+    
+    // 输出到控制台
+    console.log(logMessage);
+    
+    // 写入到文件
+    if (invoke) {
+        try {
+            await invoke('write_log', { message: logMessage });
+        } catch (err) {
+            console.error('写入日志文件失败:', err);
+        }
+    }
+}
+
+// 错误日志
+async function logError(message) {
+    await log(message, 'ERROR');
+}
+
+// 警告日志
+async function logWarn(message) {
+    await log(message, 'WARN');
+}
+
 // DOM 元素缓存
 let cardElementCache = new Map(); // Map<cardId, {cardEl, displayEl, labelEl}>
 let dragRegionElement = null; // 缓存拖动区域元素
@@ -100,6 +129,33 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     // 启动定时器
     startTimers();
+    
+    // 显示日志文件路径
+    if (invoke) {
+        try {
+            const logPath = await invoke('get_log_path');
+            log(`应用启动成功 | 日志文件位置: ${logPath}`);
+        } catch (err) {
+            console.error('获取日志路径失败:', err);
+        }
+    }
+});
+
+// 页面卸载时清理资源
+window.addEventListener('beforeunload', () => {
+    log('页面卸载，清理定时器和音频');
+    if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    // 停止所有音频
+    stopTickSound();
+    Object.values(audioElements).forEach(audio => {
+        if (audio) {
+            audio.pause();
+            audio.currentTime = 0;
+        }
+    });
 });
 
 // 初始化音频
@@ -110,7 +166,7 @@ function initAudio() {
             audioElements[key].volume = volume;
             audioElements[key].load();
         });
-        console.log('音频已初始化');
+        log('音频已初始化');
     } catch (error) {
         console.error('音频初始化失败:', error);
     }
@@ -122,6 +178,13 @@ function playSound(soundKey) {
     if (!audio) return;
     
     try {
+        // 获取当前时间用于调试
+        const now = new Date();
+        const debugInfo = cards.filter(c => c.isRunning && !c.isPaused).map(c => 
+            `卡片${c.id}: ${c.mode}模式, 剩余${c.remainingTime}秒`
+        ).join(', ');
+        log(`播放音效: ${soundKey} | 运行中的卡片: ${debugInfo || '无'}`);
+        
         audio.currentTime = 0;
         audio.play().catch(err => {
             console.error(`播放${soundKey}音效失败:`, err);
@@ -428,6 +491,16 @@ function saveGlobalSettings() {
     closeGlobalSettings();
 }
 
+// 判断卡片在当前布局下是否可见
+function isCardVisible(card) {
+    return card.span !== 'hidden';
+}
+
+// 获取当前布局下可见的卡片
+function getVisibleCards() {
+    return cards.filter(c => isCardVisible(c));
+}
+
 // 应用布局
 function applyLayout() {
     const grid = document.getElementById('main-grid');
@@ -467,7 +540,22 @@ function applyLayout() {
             break;
     }
     
+    // 自动暂停隐藏的卡片，防止它们在后台继续运行
+    cards.forEach(card => {
+        if (card.span === 'hidden' && card.isRunning && !card.isPaused) {
+            card.isPaused = true;
+            log(`布局切换：自动暂停隐藏的卡片${card.id}`);
+        }
+    });
+    
+    // 检查是否还有运行中的卡片，如果没有则停止tick音效
+    const hasRunningCard = cards.some(c => c.isRunning && !c.isPaused);
+    if (!hasRunningCard) {
+        stopTickSound();
+    }
+    
     renderCards();
+    manageSleepPrevention(); // 更新防休眠状态
 }
 
 // 只更新卡片样式，不重建 DOM
@@ -608,6 +696,9 @@ function resetCard(cardId) {
     // 停止运行
     card.isRunning = false;
     card.isPaused = false;
+    
+    // 停止tick音效（如果正在播放）
+    stopTickSound();
     
     // 根据模式重置时间
     switch(card.mode) {
@@ -750,7 +841,7 @@ async function manageSleepPrevention() {
             try {
                 await invoke('prevent_sleep');
                 isSleepPrevented = true;
-                console.log('已启用防休眠模式');
+                log('已启用防休眠模式');
             } catch (err) {
                 console.error('启用防休眠失败:', err);
             }
@@ -761,7 +852,7 @@ async function manageSleepPrevention() {
             try {
                 await invoke('allow_sleep');
                 isSleepPrevented = false;
-                console.log('已关闭防休眠模式');
+                log('已关闭防休眠模式');
             } catch (err) {
                 console.error('关闭防休眠失败:', err);
             }
@@ -771,6 +862,14 @@ async function manageSleepPrevention() {
 
 // 启动定时器
 function startTimers() {
+    // 先清除旧的定时器（防止重复创建）
+    if (timerInterval) {
+        logWarn('检测到旧定时器，正在清除...');
+        clearInterval(timerInterval);
+        timerInterval = null;
+    }
+    
+    log('启动全局定时器');
     timerInterval = setInterval(() => {
         cards.forEach(card => {
             if (!card.isRunning || card.isPaused) return;
@@ -913,29 +1012,43 @@ function handleKeyPress(e) {
                     } else {
                         // 如果正在运行，则切换暂停状态
                         card.isPaused = !card.isPaused;
+                        // 暂停时，检查是否需要停止tick音效
+                        if (card.isPaused) {
+                            const hasWarningCard = cards.some(c => 
+                                c.isRunning && !c.isPaused && c.mode === 'countdown' && 
+                                c.remainingTime >= 1 && c.remainingTime <= WARNING_THRESHOLD
+                            );
+                            if (!hasWarningCard) {
+                                stopTickSound();
+                            }
+                        }
                     }
                     manageSleepPrevention(); // 立即更新防休眠状态
                 }
             }
             break;
         case ' ':
-            // 空格键：全部启动/暂停（智能切换）
+            // 空格键：全部启动/暂停（智能切换）- 只操作可见的卡片
             // 如果弹窗打开，不处理
             if (configOpen || globalSettingsOpen) {
                 return;
             }
             
             e.preventDefault();
-            // 智能切换：如果有任何运行中的，则全部暂停；否则全部启动
-            const anyRunning = cards.some(c => c.isRunning && !c.isPaused);
+            // 获取可见的卡片
+            const visibleCards = getVisibleCards();
+            // 智能切换：如果有任何可见卡片运行中的，则全部暂停；否则全部启动
+            const anyRunning = visibleCards.some(c => c.isRunning && !c.isPaused);
             if (anyRunning) {
-                cards.forEach(c => {
+                visibleCards.forEach(c => {
                     if (c.isRunning) {
                         c.isPaused = true;
                     }
                 });
+                // 全部暂停时停止tick音效
+                stopTickSound();
             } else {
-                cards.forEach(c => {
+                visibleCards.forEach(c => {
                     c.isRunning = true;
                     c.isPaused = false;
                 });
@@ -949,7 +1062,9 @@ function handleKeyPress(e) {
             break;
         case 'F12':
             e.preventDefault();
-            cards.forEach(c => {
+            // 获取可见的卡片
+            const visibleCardsForReset = getVisibleCards();
+            visibleCardsForReset.forEach(c => {
                 // 只重置未运行或暂停的计时器
                 if (!c.isRunning || c.isPaused) {
                     c.isRunning = false;
@@ -959,6 +1074,14 @@ function handleKeyPress(e) {
                     c.counterValue = 0;
                 }
             });
+            // 检查是否还有卡片在警告阶段，如果没有则停止tick音效
+            const hasWarningCard = cards.some(c => 
+                c.isRunning && !c.isPaused && c.mode === 'countdown' && 
+                c.remainingTime >= 1 && c.remainingTime <= WARNING_THRESHOLD
+            );
+            if (!hasWarningCard) {
+                stopTickSound();
+            }
             manageSleepPrevention(); // 立即更新防休眠状态
             break;
     }
