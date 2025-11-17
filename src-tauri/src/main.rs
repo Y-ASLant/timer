@@ -75,7 +75,11 @@ fn write_log(_app_handle: tauri::AppHandle, message: String) -> Result<(), Strin
                 // 写入清空标记
                 if let Ok(mut file) = OpenOptions::new().append(true).open(&log_file_path) {
                     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
-                    let _ = writeln!(file, "[{}] [INFO] 日志文件已自动清空（超过10MB）", timestamp);
+                    let _ = writeln!(
+                        file,
+                        "[{}] [INFO] 日志文件已自动清空（超过10MB）",
+                        timestamp
+                    );
                 }
             }
         }
@@ -86,7 +90,9 @@ fn write_log(_app_handle: tauri::AppHandle, message: String) -> Result<(), Strin
         .create(true)
         .append(true)
         .open(&log_file_path)
-        .map_err(|e| format!("打开日志文件失败: {} (路径: {:?})", e, log_file_path))?;
+        .map_err(|e| {
+            format!("打开日志文件失败: {} (路径: {:?})", e, log_file_path)
+        })?;
 
     // 写入日志（添加时间戳）
     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
