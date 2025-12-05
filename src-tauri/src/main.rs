@@ -55,10 +55,10 @@ fn allow_sleep(state: tauri::State<AppState>) -> Result<(), String> {
 #[tauri::command]
 fn write_log(_app_handle: tauri::AppHandle, message: String) -> Result<(), String> {
     // 获取可执行文件所在目录（软件安装目录）
-    let exe_path = std::env::current_exe()
-        .map_err(|e| format!("无法获取可执行文件路径: {}", e))?;
-    
-    let exe_dir = exe_path.parent()
+    let exe_path = std::env::current_exe().map_err(|e| format!("无法获取可执行文件路径: {}", e))?;
+
+    let exe_dir = exe_path
+        .parent()
         .ok_or_else(|| "无法获取可执行文件目录".to_string())?;
 
     // 日志文件直接保存在可执行文件目录
@@ -71,7 +71,7 @@ fn write_log(_app_handle: tauri::AppHandle, message: String) -> Result<(), Strin
             if metadata.len() > MAX_LOG_SIZE {
                 // 清空日志文件（创建新文件覆盖旧文件）
                 let _ = std::fs::write(&log_file_path, "");
-                
+
                 // 写入清空标记
                 if let Ok(mut file) = OpenOptions::new().append(true).open(&log_file_path) {
                     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
@@ -90,14 +90,11 @@ fn write_log(_app_handle: tauri::AppHandle, message: String) -> Result<(), Strin
         .create(true)
         .append(true)
         .open(&log_file_path)
-        .map_err(|e| {
-            format!("打开日志文件失败: {} (路径: {:?})", e, log_file_path)
-        })?;
+        .map_err(|e| format!("打开日志文件失败: {} (路径: {:?})", e, log_file_path))?;
 
     // 写入日志（添加时间戳）
     let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S");
-    writeln!(file, "[{}] {}", timestamp, message)
-        .map_err(|e| format!("写入日志失败: {}", e))?;
+    writeln!(file, "[{}] {}", timestamp, message).map_err(|e| format!("写入日志失败: {}", e))?;
 
     Ok(())
 }
@@ -106,12 +103,12 @@ fn write_log(_app_handle: tauri::AppHandle, message: String) -> Result<(), Strin
 #[tauri::command]
 fn get_log_path(_app_handle: tauri::AppHandle) -> Result<String, String> {
     // 获取可执行文件所在目录（软件安装目录）
-    let exe_path = std::env::current_exe()
-        .map_err(|e| format!("无法获取可执行文件路径: {}", e))?;
-    
-    let exe_dir = exe_path.parent()
+    let exe_path = std::env::current_exe().map_err(|e| format!("无法获取可执行文件路径: {}", e))?;
+
+    let exe_dir = exe_path
+        .parent()
         .ok_or_else(|| "无法获取可执行文件目录".to_string())?;
-    
+
     let log_file_path = exe_dir.join("app.log");
     Ok(log_file_path.to_string_lossy().to_string())
 }
