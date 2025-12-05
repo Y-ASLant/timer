@@ -22,8 +22,6 @@ chrono = "0.4" # 时间处理
 [features]
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
-# 支持旧版 WebKit (4.0) 用于旧版 Linux 发行版
-webkit2gtk-4-0 = ["tauri/linux-libwebkit2gtk-4-0"]
 
 [profile.release]
 strip = true      # 移除调试符号

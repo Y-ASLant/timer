@@ -30,12 +30,11 @@
 - [Rust](https://www.rust-lang.org/) (最新稳定版)
 - Linux 系统需要额外安装依赖：
   ```bash
-  # Debian/Ubuntu 22.04+ (使用 webkit2gtk-4.1)
+  # Debian/Ubuntu 22.04+
   sudo apt-get install libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libayatana-appindicator3-dev librsvg2-dev
-  
-  # Debian/Ubuntu 20.04 或更旧版本 (使用 webkit2gtk-4.0)
-  sudo apt-get install libwebkit2gtk-4.0-dev build-essential curl wget file libssl-dev libayatana-appindicator3-dev librsvg2-dev
   ```
+
+> **注意**：Tauri 2.0 需要 webkit2gtk-4.1，旧版 Linux 系统（如 Ubuntu 20.04）请从 [Releases](https://github.com/Y-ASLant/timer/releases) 下载预编译包。
 
 **构建步骤**
 
@@ -47,17 +46,11 @@ cd timer
 # 进入 Tauri 目录
 cd src-tauri
 
-# 构建发布版本 (Ubuntu 22.04+, 使用 webkit2gtk-4.1)
+# 构建发布版本
 cargo tauri build
 
-# 或者为旧版 Linux 构建 (Ubuntu 20.04 或更旧, 使用 webkit2gtk-4.0)
-cargo tauri build --features webkit2gtk-4-0
-
-# 运行开发版本
+# 或运行开发版本
 cargo tauri dev
-
-# 为旧版 Linux 运行开发版本
-cargo tauri dev --features webkit2gtk-4-0
 ```
 
 构建完成后,安装包位于 `src-tauri/target/release/bundle/` 目录。

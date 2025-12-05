@@ -24,10 +24,6 @@ jobs:
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             name: Linux x64
-          - os: ubuntu-20.04
-            target: x86_64-unknown-linux-gnu
-            name: Linux x64 (webkit2gtk-4.0)
-            webkit_version: "4.0"
 
     runs-on: ${{ matrix.platform.os }}
     
@@ -40,7 +36,7 @@ jobs:
         with:
           targets: ${{ matrix.platform.target }}
 
-      - name: Install Linux dependencies (webkit2gtk-4.1)
+      - name: Install Linux dependencies
         if: matrix.platform.os == 'ubuntu-22.04'
         run: |
           sudo apt-get update
@@ -54,22 +50,8 @@ jobs:
             librsvg2-dev \
             imagemagick
 
-      - name: Install Linux dependencies (webkit2gtk-4.0)
-        if: matrix.platform.os == 'ubuntu-20.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.0-dev \
-            build-essential \
-            curl \
-            wget \
-            file \
-            libssl-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            imagemagick
-
       - name: Generate PNG icons from ICO (Linux)
-        if: startsWith(matrix.platform.os, 'ubuntu')
+        if: matrix.platform.os == 'ubuntu-22.04'
         run: |
           convert icons/icon.ico[0] -resize 32x32 -define png:color-type=6 icons/32x32.png
           convert icons/icon.ico[0] -resize 128x128 -define png:color-type=6 icons/128x128.png
@@ -83,22 +65,14 @@ jobs:
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0.0" --locked
 
-      - name: Build Tauri app (webkit2gtk-4.1)
-        if: matrix.platform.webkit_version != '4.0'
+      - name: Build Tauri app
         working-directory: ./src-tauri
         run: cargo tauri build --verbose
         env:
           GITHUB_API_TOKEN: ${{ secrets.API_TOKEN }}
 
-      - name: Build Tauri app (webkit2gtk-4.0)
-        if: matrix.platform.webkit_version == '4.0'
-        working-directory: ./src-tauri
-        run: cargo tauri build --verbose --features webkit2gtk-4-0
-        env:
-          GITHUB_API_TOKEN: ${{ secrets.API_TOKEN }}
-
       - name: Compress binaries (Linux)
-        if: startsWith(matrix.platform.os, 'ubuntu')
+        if: matrix.platform.os == 'ubuntu-22.04'
         run: |
           # 使用UPX进一步压缩二进制文件
           sudo apt-get install -y upx
@@ -115,7 +89,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload artifacts (Linux)
-        if: startsWith(matrix.platform.os, 'ubuntu')
+        if: matrix.platform.os == 'ubuntu-22.04'
         uses: actions/upload-artifact@v4
         with:
           name: timer-${{ matrix.platform.name }}
