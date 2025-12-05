@@ -1,0 +1,114 @@
+app-id: top.aslant.countdown
+runtime: org.gnome.Platform
+runtime-version: '47'
+sdk: org.gnome.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: countdown-timer
+
+finish-args:
+  # X11 支持
+  - --socket=x11
+  # Wayland 支持
+  - --socket=wayland
+  # GPU 加速
+  - --device=dri
+  # 音频播放
+  - --socket=pulseaudio
+  # 网络访问（用于更新检查）
+  - --share=network
+  # 保存数据
+  - --persist=.local/share/top.aslant.countdown
+
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
+  env:
+    CARGO_HOME: /run/build/countdown-timer/cargo
+    RUSTFLAGS: '-C opt-level=2 -C link-arg=-s'
+
+modules:
+  # Tauri 依赖的 webkit2gtk-4.1
+  - name: webkit2gtk-4.1
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DPORT=GTK
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DENABLE_DOCUMENTATION=OFF
+      - -DENABLE_MINIBROWSER=OFF
+      - -DENABLE_GAMEPAD=OFF
+      - -DUSE_SOUP2=OFF
+    sources:
+      - type: archive
+        url: https://webkitgtk.org/releases/webkitgtk-2.42.5.tar.xz
+        sha256: 3c0e3f955ebc0d5e21e4b4b6c9c9e9e9d3b1b1e0e6d6e6e6e6e6e6e6e6e6e6e6
+    cleanup:
+      - /include
+      - /lib/pkgconfig
+      - /share/doc
+
+  # 主应用
+  - name: countdown-timer
+    buildsystem: simple
+    build-options:
+      env:
+        CARGO_HOME: /run/build/countdown-timer/cargo
+    build-commands:
+      # 安装 Tauri CLI
+      - cargo install tauri-cli --version "^2.0.0" --locked --root /app
+      
+      # 构建应用
+      - cd src-tauri && cargo tauri build --bundles deb
+      
+      # 复制二进制文件
+      - install -Dm755 src-tauri/target/release/countdown-timer /app/bin/countdown-timer
+      
+      # 复制图标
+      - install -Dm644 icons/128x128.png /app/share/icons/hicolor/128x128/apps/top.aslant.countdown.png
+      
+      # 创建桌面文件
+      - |
+        cat > /app/share/applications/top.aslant.countdown.desktop <<EOF
+        [Desktop Entry]
+        Name=Countdown Timer
+        Name[zh_CN]=计时器
+        Comment=A powerful countdown timer application
+        Comment[zh_CN]=一个功能强大的计时器应用
+        Exec=countdown-timer
+        Icon=top.aslant.countdown
+        Terminal=false
+        Type=Application
+        Categories=Utility;GTK;
+        Keywords=timer;countdown;stopwatch;clock;
+        EOF
+      
+      # 创建 AppStream 元数据
+      - mkdir -p /app/share/metainfo
+      - |
+        cat > /app/share/metainfo/top.aslant.countdown.metainfo.xml <<EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <component type="desktop-application">
+          <id>top.aslant.countdown</id>
+          <metadata_license>MIT</metadata_license>
+          <project_license>MIT</project_license>
+          <name>Countdown Timer</name>
+          <name xml:lang="zh_CN">计时器</name>
+          <summary>A powerful countdown timer application</summary>
+          <summary xml:lang="zh_CN">一个功能强大的计时器应用</summary>
+          <description>
+            <p>A powerful and beautiful desktop timer application built with Tauri 2.0.</p>
+            <p xml:lang="zh_CN">一个功能强大且美观的桌面计时器应用，基于 Tauri 2.0 构建。</p>
+          </description>
+          <launchable type="desktop-id">top.aslant.countdown.desktop</launchable>
+          <url type="homepage">https://github.com/Y-ASLant/timer</url>
+          <url type="bugtracker">https://github.com/Y-ASLant/timer/issues</url>
+          <developer_name>ASLant</developer_name>
+          <content_rating type="oars-1.1" />
+          <releases>
+            <release version="1.1.0" date="2025-01-01"/>
+          </releases>
+        </component>
+        EOF
+    
+    sources:
+      - type: dir
+        path: .

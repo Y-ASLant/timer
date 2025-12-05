@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=Countdown Timer
+Name[zh_CN]=计时器
+Comment=A powerful countdown timer application
+Comment[zh_CN]=一个功能强大的计时器应用
+Exec=countdown-timer
+Icon=top.aslant.countdown
+Terminal=false
+Type=Application
+Categories=Utility;GTK;
+Keywords=timer;countdown;stopwatch;clock;
+StartupWMClass=countdown-timer

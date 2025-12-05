@@ -1,0 +1,47 @@
+app-id: top.aslant.countdown
+runtime: org.gnome.Platform
+runtime-version: '47'
+sdk: org.gnome.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: countdown-timer
+
+finish-args:
+  - --socket=x11
+  - --socket=wayland
+  - --device=dri
+  - --socket=pulseaudio
+  - --share=network
+  - --persist=.local/share/top.aslant.countdown
+
+build-options:
+  append-path: /usr/lib/sdk/rust-stable/bin
+  env:
+    CARGO_HOME: /run/build/countdown-timer/cargo
+
+modules:
+  - name: countdown-timer
+    buildsystem: simple
+    build-commands:
+      # 安装 Tauri CLI
+      - cargo install tauri-cli --version "^2.0.0" --locked --root /app
+      
+      # 构建应用
+      - cd src-tauri && cargo tauri build --bundles deb
+      
+      # 安装二进制文件
+      - install -Dm755 src-tauri/target/release/countdown-timer /app/bin/countdown-timer
+      
+      # 安装图标
+      - install -Dm644 icons/32x32.png /app/share/icons/hicolor/32x32/apps/top.aslant.countdown.png
+      - install -Dm644 icons/128x128.png /app/share/icons/hicolor/128x128/apps/top.aslant.countdown.png
+      
+      # 安装桌面文件
+      - install -Dm644 flatpak/top.aslant.countdown.desktop /app/share/applications/top.aslant.countdown.desktop
+      
+      # 安装 AppStream 元数据
+      - install -Dm644 flatpak/top.aslant.countdown.metainfo.xml /app/share/metainfo/top.aslant.countdown.metainfo.xml
+    
+    sources:
+      - type: dir
+        path: ..

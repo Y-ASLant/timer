@@ -21,8 +21,24 @@
 ### 下载安装
 
 前往 [Releases](https://github.com/Y-ASLant/timer/releases) 页面下载适合您系统的安装包：
-- Windows: `.msi` 或 `.exe` 安装程序
-- Linux: `.deb` (Debian/Ubuntu)、`.rpm` (Fedora/RHEL)
+- **Windows**: `.msi` 或 `.exe` 安装程序
+- **Linux (推荐 Flatpak)**: `.flatpak` 包 - 支持所有发行版，包括旧版本
+- **Linux (原生包)**: `.deb` (Debian/Ubuntu 22.04+)、`.rpm` (Fedora/RHEL)
+
+#### Flatpak 安装方式
+
+Flatpak 可以在任何 Linux 发行版上运行，包括不支持 webkit2gtk-4.1 的旧版本：
+
+```bash
+# 方式 1：从下载的 .flatpak 文件安装
+flatpak install countdown-timer.flatpak
+
+# 方式 2：直接从 GitHub Release 安装（需要先下载）
+# 下载后运行上面的命令
+
+# 运行应用
+flatpak run top.aslant.countdown
+```
 
 ### 从源码构建
 
@@ -55,6 +71,31 @@ cargo tauri dev
 
 构建完成后,安装包位于 `src-tauri/target/release/bundle/` 目录。
 
+#### 本地构建 Flatpak
+
+如果你想在本地构建 Flatpak 包：
+
+```bash
+# 安装 flatpak-builder
+sudo apt install flatpak-builder
+
+# 添加 Flathub 仓库
+flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
+# 安装所需的 runtime 和 SDK
+flatpak install flathub org.gnome.Platform//47 org.gnome.Sdk//47
+flatpak install flathub org.freedesktop.Sdk.Extension.rust-stable
+
+# 构建 Flatpak
+flatpak-builder --force-clean build-dir flatpak/top.aslant.countdown.yml
+
+# 安装到本地
+flatpak-builder --user --install --force-clean build-dir flatpak/top.aslant.countdown.yml
+
+# 运行
+flatpak run top.aslant.countdown
+```
+
 ## 📖 使用说明
 
 ### 快捷键
@@ -85,7 +126,7 @@ cargo tauri dev
 ## 📦 项目结构
 
 ```
-tauri-Time/
+timer/
 ├── src-tauri/          # Rust 后端代码
 │   ├── src/           # 源代码
 │   ├── Cargo.toml     # Rust 依赖配置
@@ -95,14 +136,20 @@ tauri-Time/
 │   ├── js/            # JavaScript
 │   ├── css/           # 样式文件
 │   └── music/         # 音频资源
+├── flatpak/           # Flatpak 打包配置
+│   ├── top.aslant.countdown.yml      # Flatpak manifest
+│   ├── top.aslant.countdown.desktop  # 桌面文件
+│   └── top.aslant.countdown.metainfo.xml  # AppStream 元数据
 └── icons/             # 应用图标
 ```
 
 ## 📝 开发计划
 
 - [x] Linux 平台支持
+- [x] Flatpak 打包支持（兼容所有 Linux 发行版）
 - [ ] macOS 平台支持
 - [x] 检测更新
+- [ ] 发布到 Flathub
 
 ## 🤝 贡献
 

@@ -22,3 +22,9 @@ Thumbs.db
 # Logs
 app.log
 *.log
+
+# Flatpak
+build-dir/
+.flatpak-builder/
+*.flatpak
+*.flatpakref
