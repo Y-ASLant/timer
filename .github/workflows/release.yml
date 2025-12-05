@@ -23,6 +23,10 @@ jobs:
           - os: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             name: Linux-x64
+          - os: ubuntu-20.04
+            target: x86_64-unknown-linux-gnu
+            name: Linux-x64-webkit2gtk-4.0
+            webkit_version: "4.0"
             # 未来可以添加 macOS 平台
             # - os: macos-latest
             #   target: x86_64-apple-darwin
@@ -42,7 +46,7 @@ jobs:
         with:
           targets: ${{ matrix.platform.target }}
 
-      - name: Install Linux dependencies
+      - name: Install Linux dependencies (webkit2gtk-4.1)
         if: matrix.platform.os == 'ubuntu-22.04'
         run: |
           sudo apt-get update
@@ -56,8 +60,22 @@ jobs:
             librsvg2-dev \
             imagemagick
 
+      - name: Install Linux dependencies (webkit2gtk-4.0)
+        if: matrix.platform.os == 'ubuntu-20.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.0-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            imagemagick
+
       - name: Generate PNG icons from ICO (Linux)
-        if: matrix.platform.os == 'ubuntu-22.04'
+        if: startsWith(matrix.platform.os, 'ubuntu')
         run: |
           convert icons/icon.ico[0] -resize 32x32 -define png:color-type=6 icons/32x32.png
           convert icons/icon.ico[0] -resize 128x128 -define png:color-type=6 icons/128x128.png
@@ -71,14 +89,22 @@ jobs:
       - name: Install Tauri CLI
         run: cargo install tauri-cli --version "^2.0.0" --locked
 
-      - name: Build Tauri app
+      - name: Build Tauri app (webkit2gtk-4.1)
+        if: matrix.platform.webkit_version != '4.0'
         working-directory: ./src-tauri
         run: cargo tauri build --verbose
         env:
           GITHUB_API_TOKEN: ${{ secrets.API_TOKEN }}
 
+      - name: Build Tauri app (webkit2gtk-4.0)
+        if: matrix.platform.webkit_version == '4.0'
+        working-directory: ./src-tauri
+        run: cargo tauri build --verbose --features webkit2gtk-4-0
+        env:
+          GITHUB_API_TOKEN: ${{ secrets.API_TOKEN }}
+
       - name: Compress binaries (Linux)
-        if: matrix.platform.os == 'ubuntu-22.04'
+        if: startsWith(matrix.platform.os, 'ubuntu')
         run: |
           # 使用UPX进一步压缩二进制文件
           sudo apt-get install -y upx
@@ -104,7 +130,7 @@ jobs:
           Get-ChildItem -Path "release/" -Recurse | ForEach-Object { Write-Host $_.Name }
 
       - name: Prepare release files (Linux)
-        if: matrix.platform.os == 'ubuntu-22.04'
+        if: startsWith(matrix.platform.os, 'ubuntu')
         run: |
           mkdir -p release
           # 复制 DEB 和 RPM 文件
